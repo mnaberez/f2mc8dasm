@@ -39,6 +39,7 @@ InstructionLengths = {
     AddressModes.Vector:        1,
     }
 
+
 Opcodes = {
     # 0x00
     0x00: ("nop",                 AddressModes.Inherent),
@@ -331,16 +332,15 @@ Opcodes = {
 
 
 class Instruction(object):
+    disasm_as_bytes = False  # instruction requires bytes-only disassembly
+                             # output to reassamble identically on asf2mc8
     disasm_template = '' # "cmp @ix+IXD, #IMB"
     addr_mode = None     # addressing mode
     opcode = None        # opcode byte
     operands = ()        # operand bytes
-    dir_addr = None      # address 0x00-0xFF for direct addressing
-    ext_addr = None      # address 0x0000-0FFFF for extended addressing
-    branch_addr = None   # address 0x0000-0FFFF calculated from relative
-    imm_byte = None      # immediate byte
-    imm_word = None      # immediate word
-    ixd_offset = None    # IXD offset
+    address = None       # address (0-0xFF for direct, 0-0xFFFF for others)
+    immediate = None     # immediate value (byte or word)
+    ixd_offset = None    # IXD offset 0-0xFF
     bit = None           # bit 0-7
     callv = None         # callv 0-7
     register = None      # register r0-r7
@@ -359,43 +359,27 @@ class Instruction(object):
     def __str__(self):
         d = {}
         d['OPC'] = '0x%02x' % self.opcode
-        if self.imm_byte is not None:
-            d['IMB'] = '0x%02x' % self.imm_byte
-        if self.imm_word is not None:
-            d['IMW'] = '0x%04x' % self.imm_word
-        if self.dir_addr is not None:
-            d['DIR'] = '0x%02x' % self.dir_addr
-        if self.ext_addr is not None:
-            d['EXT'] = '0x%04x' % self.ext_addr
+        if self.immediate is not None:
+            d['IMB'] = '0x%02x' % self.immediate
+        if self.immediate is not None:
+            d['IMW'] = '0x%04x' % self.immediate
+        if self.address is not None:
+            d['DIR'] = '0x%02x' % self.address
+        if self.address is not None:
+            d['EXT'] = '0x%04x' % self.address
         if self.ixd_offset is not None:
             d['IXD'] = '0x%02x' % self.ixd_offset
-        if self.branch_addr is not None:
-            d['REL'] = '0x%04x' % self.branch_addr
+        if self.address is not None:
+            d['REL'] = '0x%04x' % self.address
         if self.callv is not None:
             d['VEC'] = '%d' % self.callv
         if self.bit is not None:
             d['BIT'] = '%d' % self.bit
         if self.register is not None:
             d['REG'] = '%d' % self.register
-
         disasm = self.disasm_template
         for k, v in d.items():
             disasm = disasm.replace(k, v)
-
-        # XXX
-        if self.addr_mode == AddressModes.Extended:
-            if self.ext_addr & 0xff00 == 0:
-                csv = ', '.join(['0x%02x' % b for b in self.all_bytes])
-                comment = ' ;XXX' + disasm + ' '
-                disasm = ".byte " + csv + comment
-
-        # XXX
-        elif self.addr_mode in (AddressModes.Relative,
-                                AddressModes.BitDirectWithRelative):
-            csv = ', '.join(['0x%02x' % b for b in self.all_bytes])
-            comment = ' ;XXX ' + disasm + ' '
-            disasm = ".byte " + csv + comment
-
         return disasm
 
 
@@ -427,47 +411,54 @@ def disassemble(rom, pc):
     elif addr_mode == AddressModes.Inherent:
         pass
     elif addr_mode == AddressModes.ImmediateWord:
-        inst.imm_word = (operands[0] << 8) + operands[1]
+        inst.immediate = (operands[0] << 8) + operands[1]
     elif addr_mode == AddressModes.ImmediateByte:
-        inst.imm_byte = operands[0]
+        inst.immediate = operands[0]
     elif addr_mode == AddressModes.Extended:
         high_byte, low_byte = operands
         word = (high_byte << 8) + low_byte
-        inst.ext_addr = word
+        inst.address = word
+        inst.disasm_as_bytes = (high_byte == 0)
     elif addr_mode == AddressModes.Direct:
-        inst.dir_addr = operands[0]
+        inst.address = operands[0]
     elif addr_mode == AddressModes.DirectWithImmediateByte:
-        inst.dir_addr = operands[0]
-        inst.imm_byte = operands[1]
+        inst.address = operands[0]
+        inst.immediate = operands[1]
     elif addr_mode == AddressModes.Register:
         inst.register = opcode & 0b111
     elif addr_mode == AddressModes.RegisterWithImmediateByte:
         inst.register = opcode & 0b111
-        inst.imm_byte = operands[0]
+        inst.immediate = operands[0]
     elif addr_mode == AddressModes.Pointer:
         pass
     elif addr_mode == AddressModes.PointerWithImmediateByte:
-        inst.imm_byte = operands[0]
+        inst.immediate = operands[0]
     elif addr_mode == AddressModes.Index:
         inst.ixd_offset = operands[0]
     elif addr_mode == AddressModes.IndexWithImmediateByte:
         inst.ixd_offset = operands[0]
-        inst.imm_byte = operands[1]
+        inst.immediate = operands[1]
     elif addr_mode == AddressModes.Vector:
         inst.callv = opcode & 0b111
     elif addr_mode == AddressModes.BitDirect:
         inst.bit = opcode & 0b111
-        inst.dir_addr = operands[0]
+        inst.address = operands[0]
     elif addr_mode == AddressModes.Relative:
-        inst.branch_addr = resolve_rel(pc, operands[0])
+        inst.address = resolve_rel(pc, operands[0])
+        inst.disasm_as_bytes = True
     elif addr_mode == AddressModes.BitDirectWithRelative:
         inst.bit = opcode & 0b111
-        inst.dir_addr = operands[0]
-        inst.branch_addr = resolve_rel(pc, operands[0])
+        inst.address = resolve_rel(pc, operands[0])
+        inst.disasm_as_bytes = True
     else:
         raise NotImplementedError()
 
     return pc, inst
+
+
+
+
+
 
 
 def main():
@@ -482,10 +473,17 @@ def main():
     while pc < (len(rom)):
         new_pc, inst = disassemble(rom, pc)
         disasm = str(inst)
+        hexdump = (' '.join([ '%02x' % h for h in inst.all_bytes ])).ljust(8)
 
-        hexdump = (' '.join([ '%02x' % h for h in inst.all_bytes])).ljust(8)
-        line = '    ' + disasm.ljust(24) + ';0x%04x  %s' % (pc, hexdump)
-        print(line)
+        if inst.disasm_as_bytes:
+            print('')
+            print(("    ;" + disasm).ljust(29) + ('0x%04x  %s' % (pc, hexdump) ))
+            line = '.byte ' + ', '.join([ '0x%02x' % h for h in inst.all_bytes ])
+            print("    " + line)
+            print('')
+        else:
+            line = '    ' + disasm.ljust(24) + ';0x%04x  %s' % (pc, hexdump)
+            print(line)
 
         pc = new_pc
 
