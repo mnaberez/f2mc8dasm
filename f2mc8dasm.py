@@ -330,105 +330,144 @@ Opcodes = {
     }
 
 
+class Instruction(object):
+    disasm_template = '' # "cmp @ix+IXD, #IMB"
+    addr_mode = None     # addressing mode
+    opcode = None        # opcode byte
+    operands = ()        # operand bytes
+    dir_addr = None      # address 0x00-0xFF for direct addressing
+    ext_addr = None      # address 0x0000-0FFFF for extended addressing
+    branch_addr = None   # address 0x0000-0FFFF calculated from relative
+    imm_byte = None      # immediate byte
+    imm_word = None      # immediate word
+    ixd_offset = None    # IXD offset
+    bit = None           # bit 0-7
+    callv = None         # callv 0-7
+    register = None      # register r0-r7
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
+            else:
+                raise KeyError(k)
+
+    @property
+    def all_bytes(self):
+        return [self.opcode] + list(self.operands)
+
+    def __str__(self):
+        d = {}
+        d['OPC'] = '0x%02x' % self.opcode
+        if self.imm_byte is not None:
+            d['IMB'] = '0x%02x' % self.imm_byte
+        if self.imm_word is not None:
+            d['IMW'] = '0x%04x' % self.imm_word
+        if self.dir_addr is not None:
+            d['DIR'] = '0x%02x' % self.dir_addr
+        if self.ext_addr is not None:
+            d['EXT'] = '0x%04x' % self.ext_addr
+        if self.ixd_offset is not None:
+            d['IXD'] = '0x%02x' % self.ixd_offset
+        if self.branch_addr is not None:
+            d['REL'] = '0x%04x' % self.branch_addr
+        if self.callv is not None:
+            d['VEC'] = '%d' % self.callv
+        if self.bit is not None:
+            d['BIT'] = '%d' % self.bit
+        if self.register is not None:
+            d['REG'] = '%d' % self.register
+
+        disasm = self.disasm_template
+        for k, v in d.items():
+            disasm = disasm.replace(k, v)
+
+        # XXX
+        if self.addr_mode == AddressModes.Extended:
+            if self.ext_addr & 0xff00 == 0:
+                csv = ', '.join(['0x%02x' % b for b in self.all_bytes])
+                comment = ' ;XXX' + disasm + ' '
+                disasm = ".byte " + csv + comment
+
+        # XXX
+        elif self.addr_mode in (AddressModes.Relative,
+                                AddressModes.BitDirectWithRelative):
+            csv = ', '.join(['0x%02x' % b for b in self.all_bytes])
+            comment = ' ;XXX ' + disasm + ' '
+            disasm = ".byte " + csv + comment
+
+        return disasm
+
+
+def resolve_rel(pc, displacement):
+    if displacement & 0x80:
+        displacement = -((displacement ^ 0xff) + 1)
+    return pc + displacement
+
+
 def disassemble(rom, pc):
     opcode = rom[pc]
     pc += 1
-    disasm, mode = Opcodes[opcode]
-    instlen = InstructionLengths[mode]
+    disasm_template, addr_mode = Opcodes[opcode]
 
-    def resolve(pc, displacement):
-        if displacement & 0x80:
-            displacement = -((displacement ^ 0xff) + 1)
-        return pc + displacement
-
+    instlen = InstructionLengths[addr_mode]
     operands = bytearray()
     for i in range(instlen - 1):
         operands.append(rom[pc])
         pc +=1
-    if mode == AddressModes.Illegal:
-        tvars = {'OPC': '0x%02x' % opcode}
-    elif mode == AddressModes.Inherent:
-        tvars = {}
-    elif mode == AddressModes.ImmediateWord:
-        word = (operands[0] << 8) + operands[1]
-        tvars = {'IMW': '0x%04x' % word}
-    elif mode == AddressModes.ImmediateByte:
-        byte = operands[0]
-        tvars = {'IMB': '0x%02x' % byte}
 
-    elif mode == AddressModes.Extended:
+    inst = Instruction()
+    inst.opcode = opcode
+    inst.operands = operands
+    inst.disasm_template = disasm_template
+    inst.addr_mode = addr_mode
+
+    if addr_mode == AddressModes.Illegal:
+        pass
+    elif addr_mode == AddressModes.Inherent:
+        pass
+    elif addr_mode == AddressModes.ImmediateWord:
+        inst.imm_word = (operands[0] << 8) + operands[1]
+    elif addr_mode == AddressModes.ImmediateByte:
+        inst.imm_byte = operands[0]
+    elif addr_mode == AddressModes.Extended:
         high_byte, low_byte = operands
         word = (high_byte << 8) + low_byte
-        tvars = {'EXT': '0x%04x' % word}
-
-        if high_byte == 0:
-            csv = ', '.join(['0x%02x' % b for b in [opcode]+list(operands)])
-            comment = ' ;XXX' + disasm.replace('EXT', tvars['EXT']) + ' '
-            disasm = ".byte " + csv + comment
-
-    elif mode == AddressModes.Direct:
-        dir_ = operands[0]
-        tvars = {'DIR': '0x%02x' % dir_}
-    elif mode == AddressModes.DirectWithImmediateByte:
-        dir_ = operands[0]
-        byte = operands[1]
-        tvars = {'DIR': '0x%02x' % dir_, 'IMB': '0x%02x' % byte}
-    elif mode == AddressModes.Register:
-        reg = opcode & 0b111
-        tvars = {'REG': '%d' % reg}
-    elif mode == AddressModes.RegisterWithImmediateByte:
-        reg = opcode & 0b111
-        byte = operands[0]
-        tvars = {'REG': '%d' % reg, 'IMB': '0x%02x' % byte}
-    elif mode == AddressModes.Pointer:
-        tvars = {}
-    elif mode == AddressModes.PointerWithImmediateByte:
-        byte = operands[0]
-        tvars = {'IMB': '0x%02x' % byte}
-    elif mode == AddressModes.Index:
-        ixd = operands[0]
-        tvars = {'IXD': '0x%02x' % ixd}
-    elif mode == AddressModes.IndexWithImmediateByte:
-        ixd = operands[0]
-        byte = operands[1]
-        tvars = {'IXD': '0x%02x' % ixd, 'IMB': '0x%02x' % byte}
-    elif mode == AddressModes.Vector:
-        vec = opcode & 0b111
-        tvars = {'VEC': '%d' % vec}
-    elif mode == AddressModes.BitDirect:
-        bit = opcode & 0b111
-        dir_ = operands[0]
-        tvars = {'BIT': '%d' % bit, 'DIR': '0x%02x' % dir_}
-
-    elif mode == AddressModes.Relative:
-        addr = resolve(pc, operands[0])
-        tvars = {'REL': '0x%04x' % addr}
-
-        # XXX
-        csv = ', '.join(['0x%02x' % b for b in [opcode]+list(operands)])
-        comment = ' ;XXX ' + disasm.replace('REL', tvars['REL']) + ' '
-        disasm = ".byte " + csv + comment
-
-    elif mode == AddressModes.BitDirectWithRelative:
-        bit = opcode & 0b111
-        dir_ = operands[0]
-        addr = resolve(pc, operands[1])
-        tvars = {'BIT': '%d' % bit, 'DIR': '0x%02x' % dir_, 'REL': '0x%04x' % addr}
-
-        # XXX
-        csv = ', '.join(['0x%02x' % b for b in [opcode]+list(operands)])
-        for k, v in tvars.items():
-            disasm = disasm.replace(k, v)
-        comment = ' ;XXX ' + disasm
-        disasm = ".byte " + csv + comment
+        inst.ext_addr = word
+    elif addr_mode == AddressModes.Direct:
+        inst.dir_addr = operands[0]
+    elif addr_mode == AddressModes.DirectWithImmediateByte:
+        inst.dir_addr = operands[0]
+        inst.imm_byte = operands[1]
+    elif addr_mode == AddressModes.Register:
+        inst.register = opcode & 0b111
+    elif addr_mode == AddressModes.RegisterWithImmediateByte:
+        inst.register = opcode & 0b111
+        inst.imm_byte = operands[0]
+    elif addr_mode == AddressModes.Pointer:
+        pass
+    elif addr_mode == AddressModes.PointerWithImmediateByte:
+        inst.imm_byte = operands[0]
+    elif addr_mode == AddressModes.Index:
+        inst.ixd_offset = operands[0]
+    elif addr_mode == AddressModes.IndexWithImmediateByte:
+        inst.ixd_offset = operands[0]
+        inst.imm_byte = operands[1]
+    elif addr_mode == AddressModes.Vector:
+        inst.callv = opcode & 0b111
+    elif addr_mode == AddressModes.BitDirect:
+        inst.bit = opcode & 0b111
+        inst.dir_addr = operands[0]
+    elif addr_mode == AddressModes.Relative:
+        inst.branch_addr = resolve_rel(pc, operands[0])
+    elif addr_mode == AddressModes.BitDirectWithRelative:
+        inst.bit = opcode & 0b111
+        inst.dir_addr = operands[0]
+        inst.branch_addr = resolve_rel(pc, operands[0])
     else:
         raise NotImplementedError()
 
-    for k, v in tvars.items():
-        disasm = disasm.replace(k, v)
-
-    inst = bytearray(bytearray([opcode]) + operands)
-    return pc, inst, disasm
+    return pc, inst
 
 
 def main():
@@ -441,9 +480,10 @@ def main():
 
     pc = 0xe000
     while pc < (len(rom)):
-        new_pc, inst, disasm = disassemble(rom, pc)
+        new_pc, inst = disassemble(rom, pc)
+        disasm = str(inst)
 
-        hexdump = (' '.join([ '%02x' % h for h in inst])).ljust(8)
+        hexdump = (' '.join([ '%02x' % h for h in inst.all_bytes])).ljust(8)
         line = '    ' + disasm.ljust(24) + ';0x%04x  %s' % (pc, hexdump)
         print(line)
 
