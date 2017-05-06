@@ -239,9 +239,9 @@ Opcodes = (
     (0xc2, "incw ix",             AddressModes.Inherent),
     (0xc3, "incw ep",             AddressModes.Inherent),
     (0xc4, "movw a, EXT",         AddressModes.Extended),
-    (0xc5, "mov a, DIR",          AddressModes.Direct),
+    (0xc5, "movw a, DIR",         AddressModes.Direct),
     (0xc6, "movw a, @ix+IXD",     AddressModes.Index),
-    (0xc7, "mov a, @ep",          AddressModes.Inherent),
+    (0xc7, "movw a, @ep",         AddressModes.Inherent),
     (0xc8, "inc rREG",            AddressModes.Register),
     (0xc9, "inc rREG",            AddressModes.Register),
     (0xca, "inc rREG",            AddressModes.Register),
@@ -331,6 +331,7 @@ def disassemble(rom, pc):
     elif mode == AddressModes.ImmediateByte:
         byte = operands[0]
         tvars = {'IMB': '0x%02x' % byte}
+
     elif mode == AddressModes.Extended:
         high_byte, low_byte = operands
         word = (high_byte << 8) + low_byte
@@ -338,7 +339,7 @@ def disassemble(rom, pc):
 
         if high_byte == 0:
             csv = ', '.join(['0x%02x' % b for b in [opcode]+list(operands)])
-            comment = ' ;' + disasm.replace('EXT', tvars['EXT']) + ' '
+            comment = ' ;XXX' + disasm.replace('EXT', tvars['EXT']) + ' '
             disasm = ".byte " + csv + comment
 
     elif mode == AddressModes.Direct:
@@ -374,14 +375,30 @@ def disassemble(rom, pc):
         bit = opcode & 0b111
         dir_ = operands[0]
         tvars = {'BIT': '%d' % bit, 'DIR': '0x%02x' % dir_}
+
     elif mode == AddressModes.Relative:
         addr = resolve(pc, operands[0])
         tvars = {'REL': '0x%04x' % addr}
+
+        # XXX
+        csv = ', '.join(['0x%02x' % b for b in [opcode]+list(operands)])
+        comment = ' ;XXX ' + disasm.replace('REL', tvars['REL']) + ' '
+        disasm = ".byte " + csv + comment
+
     elif mode == AddressModes.BitDirectWithRelative:
         bit = opcode & 0b111
         dir_ = operands[0]
         addr = resolve(pc, operands[1])
         tvars = {'BIT': '%d' % bit, 'DIR': '0x%02x' % dir_, 'REL': '0x%04x' % addr}
+
+        # XXX
+        csv = ', '.join(['0x%02x' % b for b in [opcode]+list(operands)])
+        for k, v in tvars.items():
+            disasm = disasm.replace(k, v)
+        comment = ' ;XXX ' + disasm
+        disasm = ".byte " + csv + comment
+
+
     else:
         raise NotImplementedError()
 
@@ -409,6 +426,7 @@ def main():
         print(line)
 
         pc = new_pc
+
 
 if __name__ == '__main__':
     main()
