@@ -10,6 +10,7 @@ def print_listing(instructions_by_address, subroutine_addresses, rom, disassembl
     while pc < 0x10000:
         inst = instructions_by_address.get(pc)
         if inst is None:
+            # address contains data
             if last_line_code:
                 print('')
             last_line_code = False
@@ -21,7 +22,9 @@ def print_listing(instructions_by_address, subroutine_addresses, rom, disassembl
                     (';DATA  0x%04x  %02x %r ' % (pc, rom[pc], chr(rom[pc]))).ljust(26) +
                     ('(%s)' % (inst)))
             pc += 1  # XXX this is wrong for disassembly pc
+
         else:
+            # address contains code
             if not last_line_code:
                 print('')
             last_line_code = True
@@ -32,6 +35,14 @@ def print_listing(instructions_by_address, subroutine_addresses, rom, disassembl
             disasm = str(inst)
             hexdump = (' '.join([ '%02x' % h for h in inst.all_bytes ])).ljust(8)
 
-            line = '    ' + disasm.ljust(24) + ';0x%04x  %s' % (pc, hexdump)
-            print(line)
+            if inst.disasm_as_bytes:
+                print('')
+                print(("    ;" + disasm).ljust(29) + ('0x%04x  %s' % (pc, hexdump) ))
+                line = '.byte ' + ', '.join([ '0x%02x' % h for h in inst.all_bytes ])
+                print("    " + line)
+                print('')
+            else:
+                line = '    ' + disasm.ljust(24) + ';0x%04x  %s' % (pc, hexdump)
+                print(line)
+
             pc += len(inst.all_bytes)
