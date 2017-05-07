@@ -1,0 +1,15 @@
+.DS_Store
+.coverage
+.tox
+*~
+*.pyc
+*.pyo
+*.swp
+*.egg-info/
+coverage.xml
+nosetests.xml
+build/
+dist/
+env*/
+htmlcov/
+
