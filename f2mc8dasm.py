@@ -531,6 +531,8 @@ def main():
             queue.push_address(new_pc)
         elif inst.flow_type == FlowTypes.SubroutineReturn:
             pass
+        else:
+            raise NotImplementedError()
 
     print('    .F2MC8L')
     print('    .area CODE1 (ABS)')
