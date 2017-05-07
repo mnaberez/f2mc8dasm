@@ -553,7 +553,7 @@ def main():
                     ('.byte 0x%02X' % rom[pc]).ljust(24) +
                     (';DATA  0x%04x  %02x %r ' % (pc, rom[pc], chr(rom[pc]))).ljust(26) +
                     ('(%s)' % (inst)))
-            pc += 1
+            pc += 1  # XXX this is wrong for disassembly pc
         else:
             if not last_line_code:
                 print('')
