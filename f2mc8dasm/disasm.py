@@ -13,7 +13,8 @@ class Instruction(object):
     flow_type = None     # type of instruction for flow tracing
     opcode = None        # opcode byte
     operands = ()        # operand bytes
-    address = None       # address (0-0xFF for direct, 0-0xFFFF for others)
+    address = None       # address (0-0xFF for direct, 0-0xFFFF for ext)
+    bittest_address = None # direct address for bit test instructions
     immediate = None     # immediate value (byte or word)
     ixd_offset = None    # IXD offset 0-0xFF
     bit = None           # bit 0-7
@@ -34,12 +35,11 @@ class Instruction(object):
     def __str__(self):
         d = {}
         d['OPC'] = '0x%02x' % self.opcode
+
         if self.immediate is not None:
             d['IMB'] = '0x%02x' % self.immediate
         if self.immediate is not None:
             d['IMW'] = '0x%04x' % self.immediate
-        if self.address is not None:
-            d['DIR'] = '0x%02x' % self.address
         if self.address is not None:
             d['EXT'] = '0x%04x' % self.address
         if self.ixd_offset is not None:
@@ -52,6 +52,12 @@ class Instruction(object):
             d['BIT'] = '%d' % self.bit
         if self.register is not None:
             d['REG'] = '%d' % self.register
+
+        if self.bittest_address is not None:
+            d['DIR'] = '0x%02x' % self.bittest_address
+        elif self.address is not None:
+            d['DIR'] = '0x%02x' % self.address
+
         disasm = self.disasm_template
         for k, v in d.items():
             disasm = disasm.replace(k, v)
@@ -124,7 +130,8 @@ def disassemble_inst(rom, pc):
         inst.disasm_as_bytes = True
     elif addr_mode == AddressModes.BitDirectWithRelative:
         inst.bit = opcode & 0b111
-        inst.address = resolve_rel(pc, operands[0])
+        inst.bittest_address = operands[0]
+        inst.address = resolve_rel(pc, operands[1])
         inst.disasm_as_bytes = True
     else:
         raise NotImplementedError()
