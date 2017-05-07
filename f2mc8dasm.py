@@ -41,13 +41,13 @@ InstructionLengths = {
 
 
 class FlowTypes(object):
-    Continue = 0                # nop, mulu a, rol a, ...
-    IndirectBranch = 1          # jmp @a, xchw a, pc
-    UnconditionalBranch = 2     # jmp
-    ConditionalBranch = 3       # beq, bcc, ...
-    SubroutineCall = 4          # call
-    IndirectSubroutineCall = 5  # callv
-    SubroutineReturn = 6        # ret
+    Continue = 0                    # nop, mulu a, rol a, ...
+    UnconditionalJump = 1           # jmp
+    IndirectUnconditionalJump = 2   # jmp @a, xchw a,pc
+    ConditionalJump = 3             # beq, bne, bhs, blo, ...
+    SubroutineCall = 4              # call
+    IndirectSubroutineCall = 5      # callv
+    SubroutineReturn = 6            # ret, reti
 
 
 Opcodes = {
@@ -89,7 +89,7 @@ Opcodes = {
 
     # 0x20
     0x20: ("ret",                 AddressModes.Inherent,      FlowTypes.SubroutineReturn),
-    0x21: ("jmp EXT",             AddressModes.Extended,      FlowTypes.UnconditionalBranch),
+    0x21: ("jmp EXT",             AddressModes.Extended,      FlowTypes.UnconditionalJump),
     0x22: ("addc a",              AddressModes.Inherent,      FlowTypes.Continue),
     0x23: ("addcw a",             AddressModes.Inherent,      FlowTypes.Continue),
     0x24: ("addc a, #IMB",        AddressModes.ImmediateByte, FlowTypes.Continue),
@@ -250,22 +250,22 @@ Opcodes = {
     0xaf: ("setb DIR:BIT",        AddressModes.BitDirect,      FlowTypes.Continue),
 
     # 0xb0
-    0xb0: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xb1: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xb2: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xb3: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xb4: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xb5: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xb6: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xb7: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xb8: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xb9: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xba: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xbb: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xbc: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xbd: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xbe: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
-    0xbf: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalBranch),
+    0xb0: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xb1: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xb2: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xb3: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xb4: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xb5: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xb6: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xb7: ("bbc DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xb8: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xb9: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xba: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xbb: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xbc: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xbd: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xbe: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
+    0xbf: ("bbs DIR:BIT, REL",    AddressModes.BitDirectWithRelative,   FlowTypes.ConditionalJump),
 
     # 0xc0
     0xc0: ("incw a",              AddressModes.Inherent,    FlowTypes.Continue),
@@ -304,7 +304,7 @@ Opcodes = {
     0xdf: ("dec rREG",            AddressModes.Register,    FlowTypes.Continue),
 
     # 0xe0
-    0xe0: ("jmp @a",              AddressModes.Inherent,        FlowTypes.IndirectBranch),
+    0xe0: ("jmp @a",              AddressModes.Inherent,        FlowTypes.IndirectUnconditionalJump),
     0xe1: ("movw sp, a",          AddressModes.Inherent,        FlowTypes.Continue),
     0xe2: ("movw ix, a",          AddressModes.Inherent,        FlowTypes.Continue),
     0xe3: ("movw ep, a",          AddressModes.Inherent,        FlowTypes.Continue),
@@ -326,18 +326,18 @@ Opcodes = {
     0xf1: ("movw a, sp",          AddressModes.Inherent,    FlowTypes.Continue),
     0xf2: ("movw a, ix",          AddressModes.Inherent,    FlowTypes.Continue),
     0xf3: ("movw a, ep",          AddressModes.Inherent,    FlowTypes.Continue),
-    0xf4: ("xchw a, pc",          AddressModes.Inherent,    FlowTypes.IndirectBranch),
+    0xf4: ("xchw a, pc",          AddressModes.Inherent,    FlowTypes.IndirectUnconditionalJump),
     0xf5: ("xchw a, sp",          AddressModes.Inherent,    FlowTypes.Continue),
     0xf6: ("xchw a, ix",          AddressModes.Inherent,    FlowTypes.Continue),
     0xf7: ("xchw a, ep",          AddressModes.Inherent,    FlowTypes.Continue),
-    0xf8: ("bhs REL",             AddressModes.Relative,    FlowTypes.ConditionalBranch),
-    0xf9: ("blo REL",             AddressModes.Relative,    FlowTypes.ConditionalBranch),
-    0xfa: ("bp REL",              AddressModes.Relative,    FlowTypes.ConditionalBranch),
-    0xfb: ("bn REL",              AddressModes.Relative,    FlowTypes.ConditionalBranch),
-    0xfc: ("bne REL",             AddressModes.Relative,    FlowTypes.ConditionalBranch),
-    0xfd: ("beq REL",             AddressModes.Relative,    FlowTypes.ConditionalBranch),
-    0xfe: ("bge REL",             AddressModes.Relative,    FlowTypes.ConditionalBranch),
-    0xff: ("blt REL",             AddressModes.Relative,    FlowTypes.ConditionalBranch),
+    0xf8: ("bhs REL",             AddressModes.Relative,    FlowTypes.ConditionalJump),
+    0xf9: ("blo REL",             AddressModes.Relative,    FlowTypes.ConditionalJump),
+    0xfa: ("bp REL",              AddressModes.Relative,    FlowTypes.ConditionalJump),
+    0xfb: ("bn REL",              AddressModes.Relative,    FlowTypes.ConditionalJump),
+    0xfc: ("bne REL",             AddressModes.Relative,    FlowTypes.ConditionalJump),
+    0xfd: ("beq REL",             AddressModes.Relative,    FlowTypes.ConditionalJump),
+    0xfe: ("bge REL",             AddressModes.Relative,    FlowTypes.ConditionalJump),
+    0xff: ("blt REL",             AddressModes.Relative,    FlowTypes.ConditionalJump),
     }
 
 
@@ -515,16 +515,16 @@ def main():
 
         if inst.flow_type == FlowTypes.Continue:
             queue.push_address(new_pc)
-        elif inst.flow_type == FlowTypes.UnconditionalBranch:
+        elif inst.flow_type == FlowTypes.UnconditionalJump:
             queue.push_address(inst.address)
-        elif inst.flow_type == FlowTypes.ConditionalBranch:
+        elif inst.flow_type == FlowTypes.ConditionalJump:
             queue.push_address(inst.address)
             queue.push_address(new_pc)
         elif inst.flow_type == FlowTypes.SubroutineCall:
             subroutine_addresses.add(inst.address)
             queue.push_address(inst.address)
             queue.push_address(new_pc)
-        elif inst.flow_type == FlowTypes.IndirectBranch:
+        elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
             pass
         elif inst.flow_type == FlowTypes.IndirectSubroutineCall:
             queue.push_address(new_pc)
