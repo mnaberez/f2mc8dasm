@@ -4,12 +4,12 @@ Addressing Modes
 Inherent Addressing (inh)
     1-byte instruction
 
-General-Purpose Register Addressing ("Ri") **
+General-Purpose Register Addressing ("Ri")
     1-byte instruction
     2-byte if used with immediate value like in 0x88 (mov r0, #0xff)
     Register is encoded in instruction
 
-Pointer Addressing ("@EP") **
+Pointer Addressing ("@EP")
     1-byte instruction
     2-byte if used with immediate value like in 0x87 (mov @ep, #0xff)
     address is taken from EP
@@ -23,7 +23,7 @@ Immediate Addressing ("#")
     3-byte instruction for immediate word like in 0xe4 (movw a, #0xffff)
     no address, value in immediate byte
 
-Direct Addressing ("dir") **
+Direct Addressing ("dir")
     2-byte instruction
     3-byte if used with immediate value like in 0x85 (mov 0xff, #0xff)
     used to access 0x00-0xFF
@@ -37,7 +37,7 @@ Bit-Direct Addressing ("dir:b")
     3-byte if used with relative displacement like in 0xb0 (bbc 0xff:0,0xe005)
     used to access one bit of a byte in 0x00-0xFF
 
-Index Addressing ("@IX+d") **
+Index Addressing ("@IX+d")
     2-byte instruction
     3-byte if used with immediate value like in 0x86 (mov @ix+0xff, #0xff)
     used to access 0x0000-0xFFFF.  immediate by is added to IX to make address.
@@ -107,7 +107,7 @@ Instructions
 0x33    subcw a         inh (1-byte)        subcw a
 0x34    subc a, #d8     imm (2-byte)        subc a, #0xff
 0x35    subc a, dir     dir (2-byte)        subc a, 0xff
-0x36    subc a, @ix+d   ixd (2-byte)        subc a, @id+0xff
+0x36    subc a, @ix+d   ixd (2-byte)        subc a, @ix+0xff
 0x37    subc a, @ep     ptr (1-byte)        subc a, @ep
 0x38    subc a, r0      gpr (1-byte)        subc a, r0
 0x39    subc a, r1      gpr (1-byte)        subc a, r1
@@ -175,7 +175,7 @@ Instructions
 0x73    orw a           inh (1-byte)        orw a
 0x74    or a, #d8       imm (2-byte)        or a, #0xff
 0x75    or a, dir       dir (2-byte)        or a, 0xff
-0x76    or a, @ix+d     ixd (2-byte)        or a, @id+0xff
+0x76    or a, @ix+d     ixd (2-byte)        or a, @ix+0xff
 0x77    or a, @ep       ptr (1-byte)        or a, @ep
 0x78    or a, r0        gpr (1-byte)        or a, r0
 0x79    or a, r1        gpr (1-byte)        or a, r1
