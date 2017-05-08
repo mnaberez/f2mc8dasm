@@ -32,37 +32,6 @@ class Instruction(object):
     def all_bytes(self):
         return [self.opcode] + list(self.operands)
 
-    def __str__(self):
-        d = {}
-        d['OPC'] = '0x%02x' % self.opcode
-
-        if self.immediate is not None:
-            d['IMB'] = '0x%02x' % self.immediate
-        if self.immediate is not None:
-            d['IMW'] = '0x%04x' % self.immediate
-        if self.address is not None:
-            d['EXT'] = '0x%04x' % self.address
-        if self.ixd_offset is not None:
-            d['IXD'] = '0x%02x' % self.ixd_offset
-        if self.address is not None:
-            d['REL'] = '0x%04x' % self.address
-        if self.callv is not None:
-            d['VEC'] = '%d' % self.callv
-        if self.bit is not None:
-            d['BIT'] = '%d' % self.bit
-        if self.register is not None:
-            d['REG'] = '%d' % self.register
-
-        if self.bittest_address is not None:
-            d['DIR'] = '0x%02x' % self.bittest_address
-        elif self.address is not None:
-            d['DIR'] = '0x%02x' % self.address
-
-        disasm = self.disasm_template
-        for k, v in d.items():
-            disasm = disasm.replace(k, v)
-        return disasm
-
 
 def resolve_rel(pc, displacement):
     if displacement & 0x80:
@@ -127,12 +96,10 @@ def disassemble_inst(rom, pc):
         inst.address = operands[0]
     elif addr_mode == AddressModes.Relative:
         inst.address = resolve_rel(pc, operands[0])
-        inst.disasm_as_bytes = True
     elif addr_mode == AddressModes.BitDirectWithRelative:
         inst.bit = opcode & 0b111
         inst.bittest_address = operands[0]
         inst.address = resolve_rel(pc, operands[1])
-        inst.disasm_as_bytes = True
     else:
         raise NotImplementedError()
 

@@ -22,9 +22,9 @@ def main():
 
     tracer = Tracer(rom, entry_points, traceable_range)
 
-    instructions_by_address, subroutine_addresses = tracer.trace(disassemble_inst)
+    instructions_by_address, jump_addresses, subroutine_addresses = tracer.trace(disassemble_inst)
 
-    printer = Printer(instructions_by_address, subroutine_addresses, rom)
+    printer = Printer(instructions_by_address, jump_addresses, subroutine_addresses, rom)
     printer.print_listing()
 
 

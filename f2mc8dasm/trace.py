@@ -10,6 +10,7 @@ class Tracer(object):
 
     def trace(self, disassemble_func):
         instructions_by_address = {}
+        jump_addresses = set()
         subroutine_addresses = set()
 
         while self.queue.has_addresses():
@@ -21,8 +22,10 @@ class Tracer(object):
             if inst.flow_type == FlowTypes.Continue:
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.UnconditionalJump:
+                jump_addresses.add(inst.address)
                 self.add_to_queue(inst.address)
             elif inst.flow_type == FlowTypes.ConditionalJump:
+                jump_addresses.add(inst.address)
                 self.add_to_queue(inst.address)
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.SubroutineCall:
@@ -38,7 +41,7 @@ class Tracer(object):
             else:
                 raise NotImplementedError()
 
-        return instructions_by_address, subroutine_addresses
+        return instructions_by_address, jump_addresses, subroutine_addresses
 
     def add_to_queue(self, address):
         if address in self.traceable_range:

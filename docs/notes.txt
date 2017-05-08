@@ -1,0 +1,18 @@
+ASF2MC8 Branch Displacement
+---------------------------
+
+asf2mc8 disassembles branches incorrectly:
+
+.org e000
+    bne 0xdffe       ;uses low byte (0xfe) for displacement instead of
+                     ;  calculating displacement from PC to 0xdfee
+
+For branch displacement to be calculated, the target has to be an actual
+label.  An absolute value or an equate won't work.
+
+Address Marking
+---------------
+
+An address might the target of both a JMP and a CALL.  If it is, it should
+be marked as a subroutine ("sub_*") not label ("lab_*").
+
