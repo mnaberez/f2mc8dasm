@@ -54,29 +54,25 @@ class Printer(object):
         print(line)
 
     def format_instruction(self, inst):
-        d = {}
-        d['OPC'] = '0x%02x' % inst.opcode
+        d = {'OPC': '0x%02x' % inst.opcode}
 
         if inst.immediate is not None:
             d['IMB'] = '0x%02x' % inst.immediate
-        if inst.immediate is not None:
             d['IMW'] = '0x%04x' % inst.immediate
         if inst.address is not None:
             d['EXT'] = self.format_address(inst.address)
+            d['REL'] = self.format_address(inst.address)
+            d['DIR'] = '0x%02x' % inst.address
+        if inst.bittest_address is not None:
+            d['DIR'] = '0x%02x' % inst.bittest_address
         if inst.ixd_offset is not None:
             d['IXD'] = '0x%02x' % inst.ixd_offset
-        if inst.address is not None:
-            d['REL'] = self.format_address(inst.address)
         if inst.callv is not None:
             d['VEC'] = '%d' % inst.callv
         if inst.bit is not None:
             d['BIT'] = '%d' % inst.bit
         if inst.register is not None:
             d['REG'] = '%d' % inst.register
-        if inst.bittest_address is not None:
-            d['DIR'] = '0x%02x' % inst.bittest_address
-        elif inst.address is not None:
-            d['DIR'] = '0x%02x' % inst.address
 
         disasm = inst.disasm_template
         for k, v in d.items():
