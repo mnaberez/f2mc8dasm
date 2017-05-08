@@ -1,6 +1,6 @@
 import sys
 
-from f2mc8dasm.trace import TraceQueue, Tracer
+from f2mc8dasm.trace import Tracer
 from f2mc8dasm.listing import print_listing
 from f2mc8dasm.disasm import disassemble_inst
 
@@ -20,8 +20,7 @@ def main():
         ]
     traceable_range = range(0xe000, 0x10000)
 
-    trace_queue = TraceQueue(entry_points, traceable_range)
-    tracer = Tracer(rom, trace_queue)
+    tracer = Tracer(rom, entry_points, traceable_range)
 
     instructions_by_address, subroutine_addresses = tracer.trace(disassemble_inst)
 
