@@ -6,8 +6,6 @@ from f2mc8dasm.tables import (
 
 
 class Instruction(object):
-    disasm_as_bytes = False  # instruction requires bytes-only disassembly
-                             # output to reassamble identically on asf2mc8
     disasm_template = '' # "cmp @ix+IXD, #IMB"
     addr_mode = None     # addressing mode
     flow_type = None     # type of instruction for flow tracing
@@ -69,7 +67,6 @@ def disassemble_inst(rom, pc):
         high_byte, low_byte = operands
         word = (high_byte << 8) + low_byte
         inst.address = word
-        inst.disasm_as_bytes = (high_byte == 0)
     elif addr_mode == AddressModes.Direct:
         inst.address = operands[0]
     elif addr_mode == AddressModes.DirectWithImmediateByte:

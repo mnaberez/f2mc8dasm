@@ -1,3 +1,4 @@
+from f2mc8dasm.tables import AddressModes
 
 class Printer(object):
     def __init__(self, instructions_by_address, jump_addresses, subroutine_addresses, rom):
@@ -42,7 +43,9 @@ class Printer(object):
         disasm = self.format_instruction(inst)
         hexdump = (' '.join([ '%02x' % h for h in inst.all_bytes ])).ljust(8)
 
-        if inst.disasm_as_bytes:
+        if (inst.addr_mode == AddressModes.Extended) and ((inst.address & 0xFF00) == 0):
+            # render instruction as .byte sequence to prevent asf2mc8 from optimizing
+            # an extended address into a direct one, which breaks identical reassembly
             line = ('    .byte ' + ', '.join([ '0x%02x' % h for h in inst.all_bytes ])).ljust(28)
             line += (';%04x  %s' % (pc, hexdump)).ljust(19)
             line += disasm
