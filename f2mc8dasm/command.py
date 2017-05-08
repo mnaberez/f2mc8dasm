@@ -1,7 +1,7 @@
 import sys
 
 from f2mc8dasm.trace import Tracer
-from f2mc8dasm.listing import print_listing
+from f2mc8dasm.listing import Printer
 from f2mc8dasm.disasm import disassemble_inst
 
 
@@ -24,7 +24,8 @@ def main():
 
     instructions_by_address, subroutine_addresses = tracer.trace(disassemble_inst)
 
-    print_listing(instructions_by_address, subroutine_addresses, rom, disassemble_inst)
+    printer = Printer(instructions_by_address, subroutine_addresses, rom, disassemble_inst)
+    printer.print_listing()
 
 
 if __name__ == '__main__':
