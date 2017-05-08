@@ -1,10 +1,9 @@
 
 class Printer(object):
-    def __init__(self, instructions_by_address, subroutine_addresses, rom, disassemble_func):
+    def __init__(self, instructions_by_address, subroutine_addresses, rom):
         self.instructions_by_address = instructions_by_address
         self.subroutine_addresses = subroutine_addresses
         self.rom = rom
-        self.disassemble_func = disassemble_func
 
     def print_listing(self):
         self.print_header()
@@ -15,12 +14,14 @@ class Printer(object):
             if inst is None:
                 if last_line_code:
                     print('')
-                pc = self.print_data_line(pc)
+                self.print_data_line(pc)
+                pc += 1
                 last_line_code = False
             else:
                 if not last_line_code:
                     print('')
-                pc = self.print_code_line(pc, inst)
+                self.print_code_line(pc, inst)
+                pc += len(inst.all_bytes)
                 last_line_code = True
 
     def print_header(self):
@@ -44,15 +45,8 @@ class Printer(object):
         else:
             line = '    ' + disasm.ljust(24) + ';0x%04x  %s' % (pc, hexdump)
             print(line)
-        pc += len(inst.all_bytes)
-        return pc
 
     def print_data_line(self, pc):
-        _, inst = self.disassemble_func(self.rom, pc) # disassemble data as code
-
-        print('    ' +
-                ('.byte 0x%02X' % self.rom[pc]).ljust(24) +
-                (';DATA  0x%04x  %02x %r ' % (pc, self.rom[pc], chr(self.rom[pc]))).ljust(26) +
-                ('(%s)' % (inst)))
-        pc += 1  # XXX this is wrong for disassembly pc
-        return pc
+        line = ('    .byte 0x%02X' % self.rom[pc]).ljust(24)
+        line += ';DATA  0x%04x  %02x %r ' % (pc, self.rom[pc], chr(self.rom[pc]))
+        print(line)

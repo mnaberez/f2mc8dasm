@@ -24,7 +24,7 @@ def main():
 
     instructions_by_address, subroutine_addresses = tracer.trace(disassemble_inst)
 
-    printer = Printer(instructions_by_address, subroutine_addresses, rom, disassemble_inst)
+    printer = Printer(instructions_by_address, subroutine_addresses, rom)
     printer.print_listing()
 
 
