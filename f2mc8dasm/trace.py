@@ -33,15 +33,50 @@ class Tracer(object):
                 self.add_to_queue(inst.address)
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
-                pass
+                vectors = self.try_to_trace_case_idiom(pc)
+                for vector in vectors:
+                    jump_addresses.add(vector)
+                    self.add_to_queue(vector)
             elif inst.flow_type == FlowTypes.IndirectSubroutineCall:
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.SubroutineReturn:
                 pass
             else:
                 raise NotImplementedError()
-
         return instructions_by_address, jump_addresses, subroutine_addresses
+
+    def try_to_trace_case_idiom(self, address):
+        # extract code that may be a case statement idiom
+        base = address - 12
+        actual = list(self.rom[base:base+13])
+
+        # template for case statement idiom
+        expected = [0x14, None,         # cmp a, #{table_size}
+                    0xf8, None,         # bhs {out_of_range}
+                    0x81,               # clrc
+                    0x02,               # rol c
+                    0xe4, None, None,   # movw a, {vector_table}
+                    0x81,               # clrc
+                    0x23,               # addcw a
+                    0x93,               # movw a, @a
+                    0xe0                # jmp @a
+                    ]                   # .word addr, .word addr, ...
+
+        # fill in missing values in template
+        for offset in (1, 3, 7, 8):
+            expected[offset] = actual[offset]
+
+        # extract vectors from table if the code matched
+        vectors = set()
+        if expected == actual:
+            table_size = self.rom[base + 1]
+            table_address = base + 13
+            for i in range(0, table_size+1, 2):
+                high = self.rom[table_address + i + 0]
+                low  = self.rom[table_address + i + 1]
+                vector = (high << 8) + low
+                vectors.add(vector)
+        return vectors
 
     def add_to_queue(self, address):
         if address in self.traceable_range:
