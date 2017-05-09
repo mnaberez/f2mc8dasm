@@ -1,17 +1,18 @@
 from f2mc8dasm.tables import AddressModes
 
 class Printer(object):
-    def __init__(self, instructions_by_address, jump_addresses, subroutine_addresses, rom):
+    def __init__(self, instructions_by_address, jump_addresses, subroutine_addresses, rom, start_address):
         self.instructions_by_address = instructions_by_address
         self.jump_addresses = jump_addresses
         self.subroutine_addresses = subroutine_addresses
         self.rom = rom
+        self.start_address = start_address
 
     def print_listing(self):
         self.print_header()
         last_line_code = True
-        pc = 0xe000
-        while pc < 0x10000:
+        pc = self.start_address
+        while pc < len(self.rom):
             inst = self.instructions_by_address.get(pc)
             if inst is None:
                 if last_line_code:
