@@ -1,4 +1,7 @@
+import struct
+
 from f2mc8dasm.tables import FlowTypes
+
 
 class Tracer(object):
     def __init__(self, rom, entry_points, traceable_range):
@@ -47,8 +50,9 @@ class Tracer(object):
 
     def try_to_trace_case_idiom(self, address):
         # extract code that may be a case statement idiom
-        base = address - 12
-        actual = list(self.rom[base:base+13])
+        case_address = address - 12
+        table_address = address + 1
+        code = list(self.rom[case_address:table_address])
 
         # template for case statement idiom
         expected = [0x14, None,         # cmp a, #{table_size}
@@ -63,15 +67,14 @@ class Tracer(object):
                     ]                   # .word addr, .word addr, ...
 
         # fill in missing values in template
-        for offset in (1, 3, 7, 8):
-            expected[offset] = actual[offset]
+        expected[1], expected[3] = code[1], code[3]
+        expected[7], expected[8] = bytearray(struct.pack('>H', table_address))
 
         # extract vectors from table if the code matched
         vectors = set()
-        if expected == actual:
-            table_size = self.rom[base + 1]
-            table_address = base + 13
-            for i in range(0, table_size+1, 2):
+        if expected == code:
+            table_size = code[1]
+            for i in range(0, table_size + 1, 2):
                 high = self.rom[table_address + i + 0]
                 low  = self.rom[table_address + i + 1]
                 vector = (high << 8) + low
