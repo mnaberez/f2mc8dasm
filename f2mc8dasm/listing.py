@@ -1,15 +1,24 @@
 from f2mc8dasm.tables import AddressModes
 
 class Printer(object):
-    def __init__(self, instructions_by_address, jump_addresses, subroutine_addresses, rom, start_address):
+    def __init__(self,
+            instructions_by_address,
+            jump_addresses,
+            subroutine_addresses,
+            rom,
+            start_address,
+            symbols
+            ):
         self.instructions_by_address = instructions_by_address
         self.jump_addresses = jump_addresses
         self.subroutine_addresses = subroutine_addresses
         self.rom = rom
         self.start_address = start_address
+        self.symbols = symbols
 
     def print_listing(self):
         self.print_header()
+        self.print_symbols()
         last_line_code = True
         pc = self.start_address
         while pc < len(self.rom):
@@ -32,6 +41,18 @@ class Printer(object):
         print('    .area CODE1 (ABS)')
         print('    .org 0xe000\n')
 
+    def print_symbols(self):
+        used_symbols = set()
+        for inst in self.instructions_by_address.values():
+            if (inst.address in self.symbols):
+                used_symbols.add(inst.address)
+            if (inst.bittest_address in self.symbols):
+                used_symbols.add(inst.bittest_address)
+
+        for address in sorted(used_symbols):
+            symbol = self.symbols[address]
+            print("    %s = 0x%02x" % (symbol, address))
+
     def print_data_line(self, pc):
         line = ('    .byte 0x%02X' % self.rom[pc]).ljust(28)
         line += ';%04x  %02x          DATA %r ' % (pc, self.rom[pc], chr(self.rom[pc]))
@@ -39,7 +60,7 @@ class Printer(object):
 
     def print_code_line(self, pc, inst):
         if (pc in self.jump_addresses) or (pc in self.subroutine_addresses):
-            print("\n%s:" % self.format_address(pc))
+            print("\n%s:" % self.format_ext_address(pc))
 
         disasm = self.format_instruction(inst)
         hexdump = (' '.join([ '%02x' % h for h in inst.all_bytes ])).ljust(8)
@@ -61,11 +82,11 @@ class Printer(object):
             d['IMB'] = '0x%02x' % inst.immediate
             d['IMW'] = '0x%04x' % inst.immediate
         if inst.address is not None:
-            d['EXT'] = self.format_address(inst.address)
-            d['REL'] = self.format_address(inst.address)
-            d['DIR'] = '0x%02x' % inst.address
+            d['EXT'] = self.format_ext_address(inst.address)
+            d['REL'] = self.format_ext_address(inst.address)
+            d['DIR'] = self.format_dir_address(inst.address)
         if inst.bittest_address is not None:
-            d['DIR'] = '0x%02x' % inst.bittest_address
+            d['DIR'] = self.format_ext_address(inst.bittest_address)
         if inst.ixd_offset is not None:
             d['IXD'] = '0x%02x' % inst.ixd_offset
         if inst.callv is not None:
@@ -80,10 +101,17 @@ class Printer(object):
             disasm = disasm.replace(k, v)
         return disasm
 
-    def format_address(self, address):
+    def format_ext_address(self, address):
+        if address in self.symbols:
+            return self.symbols[address]
         if address in self.jump_addresses:
             return 'lab_%04x' % address
         elif address in self.subroutine_addresses:
             return 'sub_%04x' % address
         else:
             return '0x%04x' % address
+
+    def format_dir_address(self, address):
+        if address in self.symbols:
+            return self.symbols[address]
+        return '0x%02x' % address

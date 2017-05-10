@@ -3,7 +3,7 @@ import sys
 from f2mc8dasm.trace import Tracer
 from f2mc8dasm.listing import Printer
 from f2mc8dasm.disasm import disassemble_inst
-
+from f2mc8dasm.symbols import MB89620R_SYMBOLS
 
 def main():
     start_address = 0xe000
@@ -26,7 +26,13 @@ def main():
 
     instructions_by_address, jump_addresses, subroutine_addresses = tracer.trace(disassemble_inst)
 
-    printer = Printer(instructions_by_address, jump_addresses, subroutine_addresses, rom, start_address)
+    printer = Printer(instructions_by_address,
+                      jump_addresses,
+                      subroutine_addresses,
+                      rom,
+                      start_address,
+                      MB89620R_SYMBOLS
+                      )
     printer.print_listing()
 
 
