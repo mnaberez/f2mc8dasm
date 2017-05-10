@@ -75,7 +75,7 @@ class Tracer(object):
         targets_by_vector = {}
         if expected == code:
             table_size = code[1]
-            for offset in range(0, (table_size * 2) + 1, 2):
+            for offset in range(0, table_size * 2, 2):
                 vector = table_address + offset
                 target = struct.unpack('>H', self.rom[vector:vector+2])[0]
                 targets_by_vector[vector] = target
