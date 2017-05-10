@@ -16,19 +16,17 @@ def main():
         0xe012,
         # callv, irq vectors
         0xE0CB, 0xE0DD, 0xE0EF, 0xE163, 0xE175, 0xE187, 0xE012, 0xE199,
-        # jmp @
-        # TODO these are tables of vectors, not code
-        #0xE63F, 0xE726, 0xE791, 0xE961, 0xEA21, 0xEA9F, 0xEBA8, 0xEC42, 0xEC80
         ]
     traceable_range = range(start_address, len(rom))
 
     tracer = Tracer(rom, entry_points, traceable_range)
 
-    instructions_by_address, jump_addresses, subroutine_addresses = tracer.trace(disassemble_inst)
+    instructions_by_address, jump_addresses, subroutine_addresses, vector_addresses = tracer.trace(disassemble_inst)
 
     printer = Printer(instructions_by_address,
                       jump_addresses,
                       subroutine_addresses,
+                      vector_addresses,
                       rom,
                       start_address,
                       MB89620R_SYMBOLS

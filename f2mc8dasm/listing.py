@@ -1,3 +1,4 @@
+import struct
 from f2mc8dasm.tables import AddressModes
 
 class Printer(object):
@@ -5,6 +6,7 @@ class Printer(object):
             instructions_by_address,
             jump_addresses,
             subroutine_addresses,
+            vector_addresses,
             rom,
             start_address,
             symbols
@@ -12,6 +14,7 @@ class Printer(object):
         self.instructions_by_address = instructions_by_address
         self.jump_addresses = jump_addresses
         self.subroutine_addresses = subroutine_addresses
+        self.vector_addresses = vector_addresses
         self.rom = rom
         self.start_address = start_address
         self.symbols = symbols
@@ -26,8 +29,12 @@ class Printer(object):
             if inst is None:
                 if last_line_code:
                     print('')
-                self.print_data_line(pc)
-                pc += 1
+                if pc in self.vector_addresses:
+                    self.print_vector_line(pc)
+                    pc += 2
+                else:
+                    self.print_data_line(pc)
+                    pc += 1
                 last_line_code = False
             else:
                 if not last_line_code:
@@ -56,6 +63,13 @@ class Printer(object):
     def print_data_line(self, pc):
         line = ('    .byte 0x%02X' % self.rom[pc]).ljust(28)
         line += ';%04x  %02x          DATA %r ' % (pc, self.rom[pc], chr(self.rom[pc]))
+        print(line)
+
+    def print_vector_line(self, pc):
+        target = struct.unpack('>H', self.rom[pc:pc+2])[0]
+        target = self.format_ext_address(target)
+        line = ('    .word %s' % target).ljust(28)
+        line += ';%04x  %02x %02x       VECTOR' % (pc, self.rom[pc], self.rom[pc+1])
         print(line)
 
     def print_code_line(self, pc, inst):

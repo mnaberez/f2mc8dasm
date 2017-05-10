@@ -15,6 +15,7 @@ class Tracer(object):
         instructions_by_address = {}
         jump_addresses = set()
         subroutine_addresses = set()
+        vector_addresses = set()
 
         while self.queue.has_addresses():
             pc = self.queue.pop_address()
@@ -37,16 +38,18 @@ class Tracer(object):
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
                 vectors = self.try_to_trace_case_idiom(pc)
-                for vector in vectors:
-                    jump_addresses.add(vector)
-                    self.add_to_queue(vector)
+                for vector in sorted(vectors):
+                    vector_addresses.add(vector)
+                    target = struct.unpack('>H', self.rom[vector:vector+2])[0]
+                    jump_addresses.add(target)
+                    self.add_to_queue(target)
             elif inst.flow_type == FlowTypes.IndirectSubroutineCall:
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.SubroutineReturn:
                 pass
             else:
                 raise NotImplementedError()
-        return instructions_by_address, jump_addresses, subroutine_addresses
+        return instructions_by_address, jump_addresses, subroutine_addresses, vector_addresses
 
     def try_to_trace_case_idiom(self, address):
         # extract code that may be a case statement idiom
@@ -74,11 +77,8 @@ class Tracer(object):
         vectors = set()
         if expected == code:
             table_size = code[1]
-            for i in range(0, table_size + 1, 2):
-                high = self.rom[table_address + i + 0]
-                low  = self.rom[table_address + i + 1]
-                vector = (high << 8) + low
-                vectors.add(vector)
+            for offset in range(0, table_size + 1, 2):
+                vectors.add(table_address + offset)
         return vectors
 
     def add_to_queue(self, address):
