@@ -77,7 +77,7 @@ class Tracer(object):
         vectors = set()
         if expected == code:
             table_size = code[1]
-            for offset in range(0, table_size + 1, 2):
+            for offset in range(0, (table_size * 2) + 1, 2):
                 vectors.add(table_address + offset)
         return vectors
 
