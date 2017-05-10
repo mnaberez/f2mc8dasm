@@ -37,10 +37,8 @@ class Tracer(object):
                 self.add_to_queue(inst.address)
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
-                vectors = self.try_to_trace_case_idiom(pc)
-                for vector in sorted(vectors):
+                for vector, target in self.try_to_trace_case_idiom(pc).items():
                     vector_addresses.add(vector)
-                    target = struct.unpack('>H', self.rom[vector:vector+2])[0]
                     jump_addresses.add(target)
                     self.add_to_queue(target)
             elif inst.flow_type == FlowTypes.IndirectSubroutineCall:
@@ -74,12 +72,14 @@ class Tracer(object):
         expected[7], expected[8] = bytearray(struct.pack('>H', table_address))
 
         # extract vectors from table if the code matched
-        vectors = set()
+        targets_by_vector = {}
         if expected == code:
             table_size = code[1]
             for offset in range(0, (table_size * 2) + 1, 2):
-                vectors.add(table_address + offset)
-        return vectors
+                vector = table_address + offset
+                target = struct.unpack('>H', self.rom[vector:vector+2])[0]
+                targets_by_vector[vector] = target
+        return targets_by_vector
 
     def add_to_queue(self, address):
         if address in self.traceable_range:
