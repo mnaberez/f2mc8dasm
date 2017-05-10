@@ -14,8 +14,8 @@ def main():
     entry_points = [
         # reset
         0xe012,
-        # callv, irq vectors
-        0xE0CB, 0xE0DD, 0xE0EF, 0xE163, 0xE175, 0xE187, 0xE012, 0xE199,
+        # irq vectors
+        0xE0CB, 0xE0DD, 0xE0EF, 0xE163, 0xE175, 0xE187, 0xE199,
         ]
     traceable_range = range(start_address, len(rom))
 
