@@ -18,6 +18,9 @@ class Memory(object):
             return bytearray([self.contents[x] for x in l])
         return self.contents[address]
 
+    def __len__(self):
+        return len(self.contents)
+
     def set_instruction(self, address, inst):
         self.instructions[address] = inst
         for i in range(len(inst)):

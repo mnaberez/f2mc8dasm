@@ -17,7 +17,7 @@ class Printer(object):
         self.print_symbols()
         last_line_code = True
         pc = self.start_address
-        while pc < 0x10000: # xxx
+        while pc < len(self.memory):
             if self.memory.get_type(pc) == LocationTypes.InstructionStart:
                 inst = self.memory.get_instruction(pc)
                 if not last_line_code:
@@ -43,7 +43,7 @@ class Printer(object):
 
     def print_symbols(self):
         used_symbols = set()
-        for address in range(0, 0x10000):
+        for address in range(0, len(self.memory)):
             if self.memory.get_type(address) == LocationTypes.InstructionStart:
                 inst = self.memory.get_instruction(address)
 
