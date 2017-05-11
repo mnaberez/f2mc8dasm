@@ -1,21 +1,14 @@
 import struct
+from f2mc8dasm.memory import LocationTypes, LocationAnnotations
 from f2mc8dasm.tables import AddressModes
 
 class Printer(object):
     def __init__(self,
-            instructions_by_address,
-            jump_addresses,
-            subroutine_addresses,
-            vector_addresses,
-            rom,
+            memory,
             start_address,
             symbols
             ):
-        self.instructions_by_address = instructions_by_address
-        self.jump_addresses = jump_addresses
-        self.subroutine_addresses = subroutine_addresses
-        self.vector_addresses = vector_addresses
-        self.rom = rom
+        self.memory = memory
         self.start_address = start_address
         self.symbols = symbols
 
@@ -24,24 +17,24 @@ class Printer(object):
         self.print_symbols()
         last_line_code = True
         pc = self.start_address
-        while pc < len(self.rom):
-            inst = self.instructions_by_address.get(pc)
-            if inst is None:
+        while pc < 0x10000: # xxx
+            if self.memory.get_type(pc) == LocationTypes.InstructionStart:
+                inst = self.memory.get_instruction(pc)
+                if not last_line_code:
+                    print('')
+                self.print_code_line(pc, inst)
+                pc += len(inst.all_bytes)
+                last_line_code = True
+            else:
                 if last_line_code:
                     print('')
-                if pc in self.vector_addresses:
+                if self.memory.get_annotation(pc) == LocationAnnotations.Vector:
                     self.print_vector_line(pc)
                     pc += 2
                 else:
                     self.print_data_line(pc)
                     pc += 1
                 last_line_code = False
-            else:
-                if not last_line_code:
-                    print('')
-                self.print_code_line(pc, inst)
-                pc += len(inst.all_bytes)
-                last_line_code = True
 
     def print_header(self):
         print('    .F2MC8L')
@@ -50,30 +43,33 @@ class Printer(object):
 
     def print_symbols(self):
         used_symbols = set()
-        for inst in self.instructions_by_address.values():
-            if (inst.address in self.symbols):
-                used_symbols.add(inst.address)
-            if (inst.bittest_address in self.symbols):
-                used_symbols.add(inst.bittest_address)
+        for address in range(0, 0x10000):
+            if self.memory.get_type(address) == LocationTypes.InstructionStart:
+                inst = self.memory.get_instruction(address)
+
+                if (inst.address in self.symbols):
+                    used_symbols.add(inst.address)
+                if (inst.bittest_address in self.symbols):
+                    used_symbols.add(inst.bittest_address)
 
         for address in sorted(used_symbols):
             symbol = self.symbols[address]
             print("    %s = 0x%02x" % (symbol, address))
 
     def print_data_line(self, pc):
-        line = ('    .byte 0x%02X' % self.rom[pc]).ljust(28)
-        line += ';%04x  %02x          DATA %r ' % (pc, self.rom[pc], chr(self.rom[pc]))
+        line = ('    .byte 0x%02X' % self.memory[pc]).ljust(28)
+        line += ';%04x  %02x          DATA %r ' % (pc, self.memory[pc], chr(self.memory[pc]))
         print(line)
 
     def print_vector_line(self, pc):
-        target = struct.unpack('>H', self.rom[pc:pc+2])[0]
+        target = struct.unpack('>H', self.memory[pc:pc+2])[0]
         target = self.format_ext_address(target)
         line = ('    .word %s' % target).ljust(28)
-        line += ';%04x  %02x %02x       VECTOR' % (pc, self.rom[pc], self.rom[pc+1])
+        line += ';%04x  %02x %02x       VECTOR' % (pc, self.memory[pc], self.memory[pc+1])
         print(line)
 
     def print_code_line(self, pc, inst):
-        if (pc in self.jump_addresses) or (pc in self.subroutine_addresses):
+        if self.memory.get_annotation(pc) in (LocationAnnotations.JumpTarget, LocationAnnotations.CallTarget):
             print("\n%s:" % self.format_ext_address(pc))
 
         disasm = self.format_instruction(inst)
@@ -118,12 +114,11 @@ class Printer(object):
     def format_ext_address(self, address):
         if address in self.symbols:
             return self.symbols[address]
-        if address in self.jump_addresses:
+        if self.memory.get_annotation(address) == LocationAnnotations.JumpTarget:
             return 'lab_%04x' % address
-        elif address in self.subroutine_addresses:
+        if self.memory.get_annotation(address) == LocationAnnotations.CallTarget:
             return 'sub_%04x' % address
-        else:
-            return '0x%04x' % address
+        return '0x%04x' % address
 
     def format_dir_address(self, address):
         if address in self.symbols:

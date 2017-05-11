@@ -26,6 +26,9 @@ class Instruction(object):
             else:
                 raise KeyError(k)
 
+    def __len__(self):
+        return 1 + len(self.operands)
+
     @property
     def all_bytes(self):
         return [self.opcode] + list(self.operands)

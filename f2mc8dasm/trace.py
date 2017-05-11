@@ -1,45 +1,40 @@
 import struct
 
+from f2mc8dasm.memory import LocationAnnotations
 from f2mc8dasm.tables import FlowTypes
 
-
 class Tracer(object):
-    def __init__(self, rom, entry_points, traceable_range):
-        self.rom = rom
+    def __init__(self, memory, entry_points, traceable_range):
+        self.memory = memory
         self.traceable_range = traceable_range
         self.queue = TraceQueue()
         for address in entry_points:
             self.add_to_queue(address)
 
     def trace(self, disassemble_func):
-        instructions_by_address = {}
-        jump_addresses = set()
-        subroutine_addresses = set()
-        vector_addresses = set()
-
         while self.queue.has_addresses():
             pc = self.queue.pop_address()
 
-            new_pc, inst = disassemble_func(self.rom, pc)
-            instructions_by_address[pc] = inst
+            new_pc, inst = disassemble_func(self.memory, pc)
+            self.memory.set_instruction(pc, inst)
 
             if inst.flow_type == FlowTypes.Continue:
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.UnconditionalJump:
-                jump_addresses.add(inst.address)
+                self.memory.set_annotation(inst.address, LocationAnnotations.JumpTarget)
                 self.add_to_queue(inst.address)
             elif inst.flow_type == FlowTypes.ConditionalJump:
-                jump_addresses.add(inst.address)
+                self.memory.set_annotation(inst.address, LocationAnnotations.JumpTarget)
                 self.add_to_queue(inst.address)
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.SubroutineCall:
-                subroutine_addresses.add(inst.address)
+                self.memory.set_annotation(inst.address, LocationAnnotations.CallTarget)
                 self.add_to_queue(inst.address)
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
                 for vector, target in self.try_to_trace_case_idiom(pc).items():
-                    vector_addresses.add(vector)
-                    jump_addresses.add(target)
+                    self.memory.set_annotation(vector, LocationAnnotations.Vector)
+                    self.memory.set_annotation(target, LocationAnnotations.JumpTarget)
                     self.add_to_queue(target)
             elif inst.flow_type == FlowTypes.IndirectSubroutineCall:
                 self.add_to_queue(new_pc)
@@ -47,13 +42,12 @@ class Tracer(object):
                 pass
             else:
                 raise NotImplementedError()
-        return instructions_by_address, jump_addresses, subroutine_addresses, vector_addresses
 
     def try_to_trace_case_idiom(self, address):
         # extract code that may be a case statement idiom
         case_address = address - 12
         table_address = address + 1
-        code = list(self.rom[case_address:table_address])
+        code = list(self.memory[case_address:table_address])
 
         # template for case statement idiom
         expected = [0x14, None,         # cmp a, #{table_size}
@@ -77,7 +71,7 @@ class Tracer(object):
             table_size = code[1]
             for offset in range(0, table_size * 2, 2):
                 vector = table_address + offset
-                target = struct.unpack('>H', self.rom[vector:vector+2])[0]
+                target = struct.unpack('>H', self.memory[vector:vector+2])[0]
                 targets_by_vector[vector] = target
         return targets_by_vector
 
