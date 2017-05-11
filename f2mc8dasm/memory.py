@@ -21,6 +21,8 @@ class Memory(object):
     def __len__(self):
         return len(self.contents)
 
+    # Instruction Storage
+
     def set_instruction(self, address, inst):
         self.instructions[address] = inst
         for i in range(len(inst)):
@@ -38,19 +40,43 @@ class Memory(object):
             if self.types[a] == LocationTypes.InstructionStart:
                 yield self.instructions[a]
 
-    def get_type(self, address):
-        return self.types[address]
+    # Location Types
 
-    def set_annotation(self, address, loc_anno):
-        self.annotations[address] = loc_anno
+    def is_data(self, address):
+        return self.types[address] == LocationTypes.Data
 
-    def get_annotation(self, address):
-        return self.annotations[address]
+    def is_instruction_start(self, address):
+        return self.types[address] == LocationTypes.InstructionStart
+
+    def is_instruction_continuation(self, address):
+        return self.types[address] == LocationTypes.InstructionContinuation
+
+    # Location Annotations
+
+    def annotate_jump_target(self, address):
+        self.annotations[address] = LocationAnnotations.JumpTarget
+
+    def annotate_call_target(self, address):
+        self.annotations[address] = LocationAnnotations.CallTarget
+
+    def annotate_vector(self, address):
+        self.annotations[address] = LocationAnnotations.Vector
+
+    def is_jump_target(self, address):
+        return self.annotations[address] == LocationAnnotations.JumpTarget
+
+    def is_call_target(self, address):
+        return self.annotations[address] == LocationAnnotations.CallTarget
+
+    def is_vector(self, address):
+        return self.annotations[address] == LocationAnnotations.Vector
+
 
 class LocationTypes(object):
     Data = 0
     InstructionStart = 1
     InstructionContinuation = 2
+
 
 class LocationAnnotations(object):
     Unknown = 0

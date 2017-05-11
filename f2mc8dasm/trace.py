@@ -1,6 +1,5 @@
 import struct
 
-from f2mc8dasm.memory import LocationAnnotations
 from f2mc8dasm.tables import FlowTypes
 
 class Tracer(object):
@@ -21,20 +20,20 @@ class Tracer(object):
             if inst.flow_type == FlowTypes.Continue:
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.UnconditionalJump:
-                self.memory.set_annotation(inst.address, LocationAnnotations.JumpTarget)
+                self.memory.annotate_jump_target(inst.address)
                 self.add_to_queue(inst.address)
             elif inst.flow_type == FlowTypes.ConditionalJump:
-                self.memory.set_annotation(inst.address, LocationAnnotations.JumpTarget)
+                self.memory.annotate_jump_target(inst.address)
                 self.add_to_queue(inst.address)
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.SubroutineCall:
-                self.memory.set_annotation(inst.address, LocationAnnotations.CallTarget)
+                self.memory.annotate_call_target(inst.address)
                 self.add_to_queue(inst.address)
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
                 for vector, target in self.try_to_trace_case_idiom(pc).items():
-                    self.memory.set_annotation(vector, LocationAnnotations.Vector)
-                    self.memory.set_annotation(target, LocationAnnotations.JumpTarget)
+                    self.memory.annotate_vector(vector)
+                    self.memory.annotate_jump_target(target)
                     self.add_to_queue(target)
             elif inst.flow_type == FlowTypes.IndirectSubroutineCall:
                 self.add_to_queue(new_pc)

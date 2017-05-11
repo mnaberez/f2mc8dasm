@@ -1,5 +1,4 @@
 import struct
-from f2mc8dasm.memory import LocationTypes, LocationAnnotations
 from f2mc8dasm.tables import AddressModes
 
 class Printer(object):
@@ -18,7 +17,7 @@ class Printer(object):
         last_line_code = True
         pc = self.start_address
         while pc < len(self.memory):
-            if self.memory.get_type(pc) == LocationTypes.InstructionStart:
+            if self.memory.is_instruction_start(pc):
                 inst = self.memory.get_instruction(pc)
                 if not last_line_code:
                     print('')
@@ -28,7 +27,7 @@ class Printer(object):
             else:
                 if last_line_code:
                     print('')
-                if self.memory.get_annotation(pc) == LocationAnnotations.Vector:
+                if self.memory.is_vector(pc):
                     self.print_vector_line(pc)
                     pc += 2
                 else:
@@ -66,7 +65,7 @@ class Printer(object):
         print(line)
 
     def print_code_line(self, pc, inst):
-        if self.memory.get_annotation(pc) in (LocationAnnotations.JumpTarget, LocationAnnotations.CallTarget):
+        if self.memory.is_jump_target(pc) or self.memory.is_call_target(pc):
             print("\n%s:" % self.format_ext_address(pc))
 
         disasm = self.format_instruction(inst)
@@ -111,9 +110,9 @@ class Printer(object):
     def format_ext_address(self, address):
         if address in self.symbols:
             return self.symbols[address]
-        if self.memory.get_annotation(address) == LocationAnnotations.JumpTarget:
+        if self.memory.is_jump_target(address):
             return 'lab_%04x' % address
-        if self.memory.get_annotation(address) == LocationAnnotations.CallTarget:
+        if self.memory.is_call_target(address):
             return 'sub_%04x' % address
         return '0x%04x' % address
 
