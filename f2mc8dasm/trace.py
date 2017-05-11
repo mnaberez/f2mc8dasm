@@ -3,12 +3,14 @@ import struct
 from f2mc8dasm.tables import FlowTypes
 
 class Tracer(object):
-    def __init__(self, memory, entry_points, traceable_range):
+    def __init__(self, memory, entry_points, vectors, traceable_range):
         self.memory = memory
         self.traceable_range = traceable_range
         self.queue = TraceQueue()
         for address in entry_points:
             self.add_to_queue(address)
+        for address in vectors:
+            self.add_vector(address)
 
     def trace(self, disassemble_func):
         while self.queue.has_addresses():
@@ -31,10 +33,8 @@ class Tracer(object):
                 self.add_to_queue(inst.address)
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
-                for vector, target in self.try_to_trace_case_idiom(pc).items():
-                    self.memory.annotate_vector(vector)
-                    self.memory.annotate_jump_target(target)
-                    self.add_to_queue(target)
+                for vector in self.try_to_trace_case_idiom(pc):
+                    self.add_vector(vector)
             elif inst.flow_type == FlowTypes.IndirectSubroutineCall:
                 self.add_to_queue(new_pc)
             elif inst.flow_type == FlowTypes.SubroutineReturn:
@@ -65,18 +65,23 @@ class Tracer(object):
         expected[7], expected[8] = bytearray(struct.pack('>H', table_address))
 
         # extract vectors from table if the code matched
-        targets_by_vector = {}
+        vectors = set()
         if expected == code:
             table_size = code[1]
             for offset in range(0, table_size * 2, 2):
-                vector = table_address + offset
-                target = struct.unpack('>H', self.memory[vector:vector+2])[0]
-                targets_by_vector[vector] = target
-        return targets_by_vector
+                vectors.add(table_address + offset)
+        return vectors
 
     def add_to_queue(self, address):
         if address in self.traceable_range:
             self.queue.push_address(address)
+
+    def add_vector(self, vector):
+        target = self.memory.read_word(vector)
+        if (target != 0xFFFF) and (target in self.traceable_range): # XXX
+            self.memory.annotate_vector(vector)
+            self.memory.annotate_jump_target(target)
+            self.add_to_queue(target)
 
 
 class TraceQueue(object):

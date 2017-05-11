@@ -13,14 +13,20 @@ def main():
     start_address = 0x10000 - len(rom)
     memory = Memory(rom)
 
-    entry_points = [
+    entry_points = []
+    vectors = [
+        # callv
+        0xffc0, 0xffc2, 0xffc4, 0xffc6, 0xffc8, 0xffca, 0xffcc, 0xffce,
+        # irq
+        0xffd0, 0xffd2, 0xffd4, 0xffd6, 0xffd8, 0xffda, 0xffdc, 0xffde,
+        0xffe0, 0xffe2, 0xffe4, 0xffe6, 0xffe8, 0xffea, 0xffec, 0xffee,
+        0xfff0, 0xfff2, 0xfff4, 0xfff6, 0xfff8, 0xfffa,
         # reset
-        0xe012,
-        # irq vectors
-        0xE0CB, 0xE0DD, 0xE0EF, 0xE163, 0xE175, 0xE187, 0xE199,
-        ]
+        0xfffe
+    ]
+
     traceable_range = range(start_address, start_address + len(rom) + 1)
-    tracer = Tracer(memory, entry_points, traceable_range)
+    tracer = Tracer(memory, entry_points, vectors, traceable_range)
     tracer.trace(disassemble_inst)
 
     printer = Printer(memory,

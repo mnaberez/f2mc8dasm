@@ -1,3 +1,4 @@
+import struct
 
 class Memory(object):
     def __init__(self, rom):
@@ -20,6 +21,12 @@ class Memory(object):
 
     def __len__(self):
         return len(self.contents)
+
+    def read_byte(self, address):
+        return self.contents[address]
+
+    def read_word(self, address):
+        return struct.unpack('>H', self.contents[address:address+2])[0]
 
     # Instruction Storage
 
