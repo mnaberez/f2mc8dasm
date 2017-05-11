@@ -38,7 +38,7 @@ class Printer(object):
     def print_header(self):
         print('    .F2MC8L')
         print('    .area CODE1 (ABS)')
-        print('    .org 0xe000\n')
+        print('    .org 0x%04x\n' % self.start_address)
 
     def print_symbols(self):
         used_symbols = set()
