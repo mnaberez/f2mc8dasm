@@ -33,6 +33,11 @@ class Memory(object):
     def get_instruction(self, address):
         return self.instructions[address]
 
+    def iter_instructions(self, address=0):
+        for a in range(address, len(self.contents)):
+            if self.types[a] == LocationTypes.InstructionStart:
+                yield self.instructions[a]
+
     def get_type(self, address):
         return self.types[address]
 

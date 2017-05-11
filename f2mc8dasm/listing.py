@@ -43,14 +43,11 @@ class Printer(object):
 
     def print_symbols(self):
         used_symbols = set()
-        for address in range(0, len(self.memory)):
-            if self.memory.get_type(address) == LocationTypes.InstructionStart:
-                inst = self.memory.get_instruction(address)
-
-                if (inst.address in self.symbols):
-                    used_symbols.add(inst.address)
-                if (inst.bittest_address in self.symbols):
-                    used_symbols.add(inst.bittest_address)
+        for inst in self.memory.iter_instructions():
+            if (inst.address in self.symbols):
+                used_symbols.add(inst.address)
+            if (inst.bittest_address in self.symbols):
+                used_symbols.add(inst.bittest_address)
 
         for address in sorted(used_symbols):
             symbol = self.symbols[address]
