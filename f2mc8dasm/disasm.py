@@ -48,12 +48,13 @@ def disassemble_inst(rom, pc):
         operands.append(rom[pc])
         pc +=1
 
-    inst = Instruction()
-    inst.opcode = opcode
-    inst.operands = operands
-    inst.disasm_template = disasm_template
-    inst.addr_mode = addr_mode
-    inst.flow_type = flow_type
+    inst = Instruction(
+        opcode=opcode,
+        operands=operands,
+        disasm_template=disasm_template,
+        addr_mode=addr_mode,
+        flow_type=flow_type,
+        )
 
     if addr_mode == AddressModes.Illegal:
         pass
