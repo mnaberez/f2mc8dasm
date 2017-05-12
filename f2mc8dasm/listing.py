@@ -2,11 +2,7 @@ import struct
 from f2mc8dasm.tables import AddressModes
 
 class Printer(object):
-    def __init__(self,
-            memory,
-            start_address,
-            symbols
-            ):
+    def __init__(self, memory, start_address, symbols):
         self.memory = memory
         self.start_address = start_address
         self.symbols = symbols
@@ -43,9 +39,9 @@ class Printer(object):
     def print_symbols(self):
         used_symbols = set()
         for inst in self.memory.iter_instructions():
-            if (inst.address in self.symbols):
+            if inst.address in self.symbols:
                 used_symbols.add(inst.address)
-            if (inst.bittest_address in self.symbols):
+            if inst.bittest_address in self.symbols:
                 used_symbols.add(inst.bittest_address)
 
         for address in sorted(used_symbols):
