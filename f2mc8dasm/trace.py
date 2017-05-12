@@ -8,9 +8,9 @@ class Tracer(object):
         self.traceable_range = traceable_range
         self.queue = TraceQueue()
         for address in entry_points:
-            self.add_to_queue(address)
+            self.enqueue_address(address)
         for address in vectors:
-            self.add_vector(address)
+            self.enqueue_vector(address)
 
     def trace(self, disassemble_func):
         while self.queue.has_addresses():
@@ -20,29 +20,40 @@ class Tracer(object):
             self.memory.set_instruction(pc, inst)
 
             if inst.flow_type == FlowTypes.Continue:
-                self.add_to_queue(new_pc)
+                self.enqueue_address(new_pc)
             elif inst.flow_type == FlowTypes.UnconditionalJump:
                 self.memory.annotate_jump_target(inst.address)
-                self.add_to_queue(inst.address)
+                self.enqueue_address(inst.address)
             elif inst.flow_type == FlowTypes.ConditionalJump:
                 self.memory.annotate_jump_target(inst.address)
-                self.add_to_queue(inst.address)
-                self.add_to_queue(new_pc)
+                self.enqueue_address(inst.address)
+                self.enqueue_address(new_pc)
             elif inst.flow_type == FlowTypes.SubroutineCall:
                 self.memory.annotate_call_target(inst.address)
-                self.add_to_queue(inst.address)
-                self.add_to_queue(new_pc)
+                self.enqueue_address(inst.address)
+                self.enqueue_address(new_pc)
             elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
-                for vector in self.try_to_trace_case_idiom(pc):
-                    self.add_vector(vector)
+                for vector in self.parse_vectors_from_case_idiom(pc):
+                    self.enqueue_vector(vector)
             elif inst.flow_type == FlowTypes.IndirectSubroutineCall:
-                self.add_to_queue(new_pc)
+                self.enqueue_address(new_pc)
             elif inst.flow_type == FlowTypes.SubroutineReturn:
                 pass
             else:
                 raise NotImplementedError()
 
-    def try_to_trace_case_idiom(self, address):
+    def enqueue_address(self, address):
+        if address in self.traceable_range:
+            self.queue.push_address(address)
+
+    def enqueue_vector(self, address):
+        target = self.memory.read_word(address)
+        if (target != 0xFFFF) and (target in self.traceable_range):
+            self.memory.annotate_vector(address)
+            self.memory.annotate_jump_target(target)
+            self.enqueue_address(target)
+
+    def parse_vectors_from_case_idiom(self, address):
         # extract code that may be a case statement idiom
         case_address = address - 12
         table_address = address + 1
@@ -71,17 +82,6 @@ class Tracer(object):
             for offset in range(0, table_size * 2, 2):
                 vectors.add(table_address + offset)
         return vectors
-
-    def add_to_queue(self, address):
-        if address in self.traceable_range:
-            self.queue.push_address(address)
-
-    def add_vector(self, vector):
-        target = self.memory.read_word(vector)
-        if (target != 0xFFFF) and (target in self.traceable_range): # XXX
-            self.memory.annotate_vector(vector)
-            self.memory.annotate_jump_target(target)
-            self.add_to_queue(target)
 
 
 class TraceQueue(object):
