@@ -11,15 +11,14 @@ class Memory(object):
             self.types[address] = LocationTypes.Data
             self.annotations[address] = LocationAnnotations.Unknown
 
-    def __getitem__(self, address):
-        ifnone = lambda a, b: b if a is None else a
-        if isinstance(address, slice):
-            l = list(range(ifnone(address.start, 0), address.stop, ifnone(address.step, 1)))
-            return bytearray([self.contents[x] for x in l])
-        return self.contents[address]
-
     def __len__(self):
         return len(self.contents)
+
+    def __getitem__(self, address):
+        if isinstance(address, slice):
+            rng = _slice_to_range(address)
+            return bytearray([ self.contents[a] for a in rng ])
+        return self.contents[address]
 
     def read_byte(self, address):
         return self.contents[address]
@@ -83,6 +82,7 @@ class Memory(object):
     def is_vector_continuation(self, address):
         return self.annotations[address] == LocationAnnotations.VectorContinuation
 
+
 class LocationTypes(object):
     Data = 0
     InstructionStart = 1
@@ -95,3 +95,12 @@ class LocationAnnotations(object):
     CallTarget = 2
     VectorStart = 3
     VectorContinuation = 4
+
+
+def _slice_to_range(slc):
+    start, stop, step = slc.start, slc.stop, slc.step
+    if start is None:
+        start = 0
+    if step is None:
+        step = 1
+    return range(start, stop, step)
