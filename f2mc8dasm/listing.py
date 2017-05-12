@@ -23,7 +23,7 @@ class Printer(object):
             else:
                 if last_line_code:
                     print('')
-                if self.memory.is_vector(address):
+                if self.memory.is_vector_start(address):
                     self.print_vector_line(address)
                     address += 2
                 else:

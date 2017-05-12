@@ -67,7 +67,8 @@ class Memory(object):
         self.annotations[address] = LocationAnnotations.CallTarget
 
     def annotate_vector(self, address):
-        self.annotations[address] = LocationAnnotations.Vector
+        self.annotations[address] = LocationAnnotations.VectorStart
+        self.annotations[address + 1] = LocationAnnotations.VectorContinuation
 
     def is_jump_target(self, address):
         return self.annotations[address] == LocationAnnotations.JumpTarget
@@ -75,9 +76,11 @@ class Memory(object):
     def is_call_target(self, address):
         return self.annotations[address] == LocationAnnotations.CallTarget
 
-    def is_vector(self, address):
-        return self.annotations[address] == LocationAnnotations.Vector
+    def is_vector_start(self, address):
+        return self.annotations[address] == LocationAnnotations.VectorStart
 
+    def is_vector_continuation(self, address):
+        return self.annotations[address] == LocationAnnotations.VectorContinuation
 
 class LocationTypes(object):
     Data = 0
@@ -89,4 +92,5 @@ class LocationAnnotations(object):
     Unknown = 0
     JumpTarget = 1
     CallTarget = 2
-    Vector = 3
+    VectorStart = 3
+    VectorContinuation = 4
