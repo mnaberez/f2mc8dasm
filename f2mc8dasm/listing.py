@@ -106,10 +106,11 @@ class Printer(object):
     def format_ext_address(self, address):
         if address in self.symbols:
             return self.symbols[address]
-        if self.memory.is_jump_target(address):
-            return 'lab_%04x' % address
-        if self.memory.is_call_target(address):
-            return 'sub_%04x' % address
+        if address >= self.start_address: # XXX should be put in symbols instead
+            if self.memory.is_jump_target(address):
+                return 'lab_%04x' % address
+            if self.memory.is_call_target(address):
+                return 'sub_%04x' % address
         return '0x%04x' % address
 
     def format_dir_address(self, address):
