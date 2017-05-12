@@ -1,4 +1,3 @@
-import struct
 
 class Memory(object):
     def __init__(self, rom):
@@ -26,7 +25,9 @@ class Memory(object):
         return self.contents[address]
 
     def read_word(self, address):
-        return struct.unpack('>H', self.contents[address:address+2])[0]
+        high = self.contents[address]
+        low = self.contents[(address + 1) & 0xFFFF]
+        return (high << 8) + low
 
     # Instruction Storage
 

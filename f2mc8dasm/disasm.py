@@ -36,20 +36,20 @@ class Instruction(object):
 
 def resolve_rel(pc, displacement):
     if displacement & 0x80:
-        displacement = -((displacement ^ 0xff) + 1)
-    return pc + displacement
+        displacement = -((displacement ^ 0xFF) + 1)
+    return (pc + displacement) & 0xFFFF
 
 
 def disassemble_inst(rom, pc):
     opcode = rom[pc]
-    pc += 1
+    pc = (pc + 1) & 0xFFFF
     disasm_template, addr_mode, flow_type = Opcodes[opcode]
 
     instlen = InstructionLengths[addr_mode]
     operands = bytearray()
     for i in range(instlen - 1):
         operands.append(rom[pc])
-        pc +=1
+        pc = (pc + 1) & 0xFFFF
 
     inst = Instruction(
         opcode=opcode,

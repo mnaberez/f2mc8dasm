@@ -18,7 +18,7 @@ class Tracer(object):
 
             inst = disassemble_func(self.memory, pc)
             self.memory.set_instruction(pc, inst)
-            new_pc = pc + len(inst)
+            new_pc = (pc + len(inst)) & 0xFFFF
 
             if inst.flow_type == FlowTypes.Continue:
                 self.enqueue_address(new_pc)
@@ -56,8 +56,8 @@ class Tracer(object):
 
     def parse_vectors_from_case_idiom(self, address):
         # extract code that may be a case statement idiom
-        case_address = address - 12
-        table_address = address + 1
+        case_address = (address - 12) & 0xFFFF
+        table_address = (address + 1) & 0xFFFF
         code = list(self.memory[case_address:table_address])
 
         # template for case statement idiom
@@ -81,7 +81,8 @@ class Tracer(object):
         if expected == code:
             table_size = code[1]
             for offset in range(0, table_size * 2, 2):
-                vectors.add(table_address + offset)
+                vector = (table_address + offset) & 0xFFFF
+                vectors.add(vector)
         return vectors
 
 
