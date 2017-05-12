@@ -16,8 +16,9 @@ class Tracer(object):
         while self.queue.has_addresses():
             pc = self.queue.pop_address()
 
-            new_pc, inst = disassemble_func(self.memory, pc)
+            inst = disassemble_func(self.memory, pc)
             self.memory.set_instruction(pc, inst)
+            new_pc = pc + len(inst)
 
             if inst.flow_type == FlowTypes.Continue:
                 self.enqueue_address(new_pc)

@@ -104,4 +104,4 @@ def disassemble_inst(rom, pc):
     else:
         raise NotImplementedError()
 
-    return pc, inst
+    return inst
