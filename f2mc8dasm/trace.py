@@ -13,8 +13,8 @@ class Tracer(object):
             self.enqueue_vector(address)
 
     def trace(self, disassemble_func):
-        while self.queue.has_addresses():
-            pc = self.queue.pop_address()
+        while len(self.queue):
+            pc = self.queue.pop()
 
             inst = disassemble_func(self.memory, pc)
             self.memory.set_instruction(pc, inst)
@@ -45,7 +45,7 @@ class Tracer(object):
 
     def enqueue_address(self, address):
         if address in self.traceable_range:
-            self.queue.push_address(address)
+            self.queue.push(address)
 
     def enqueue_vector(self, address):
         target = self.memory.read_word(address)
@@ -91,16 +91,16 @@ class TraceQueue(object):
         self.untraced_addresses = set()
         self.traced_addresses = set()
 
-    def has_addresses(self):
-        return len(self.untraced_addresses) != 0
+    def __len__(self):
+        return len(self.untraced_addresses)
 
-    def push_address(self, address):
+    def push(self, address):
         if address not in self.traced_addresses:
             self.untraced_addresses.add(address)
 
-    def pop_address(self):
+    def pop(self):
         if self.untraced_addresses:
             address = self.untraced_addresses.pop()
             self.traced_addresses.add(address)
             return address
-        return None
+        raise KeyError("pop from empty trace queue")
