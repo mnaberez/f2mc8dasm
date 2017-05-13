@@ -1,14 +1,25 @@
 ASF2MC8 Branch Displacement
 ---------------------------
 
-asf2mc8 disassembles branches incorrectly:
+asf2mc8 assembles branches with absolute addresses incorrectly:
 
     .org 0xe000
     bne 0xdffe       ;uses low byte (0xfe) for displacement instead of
-                     ;  calculating displacement from PC to 0xdfee
+                     ;  calculating displacement from PC to 0xdffe
 
 For branch displacement to be calculated, the target has to be an actual
-label.  An absolute value or an equate won't work.
+label.  An absolute literal or an equate won't work.
+
+asf2mc8 does assemble branches correctly relative to the program counter:
+
+    .org 0xe000
+    bne .            ;correctly computes branch to 0xe000:
+                     ;E000 FC FE    [ 3]    26  bne .
+
+    .org 0xe000
+    bne .-2          ;correctly computes branch to 0xe000 - 2:
+                     ;E000 FC FC    [ 3]    29 	bne .-2
+
 
 Address Marking
 ---------------
