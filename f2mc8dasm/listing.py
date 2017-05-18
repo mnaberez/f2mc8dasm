@@ -67,9 +67,13 @@ class Printer(object):
         disasm = self.format_instruction(inst)
         hexdump = (' '.join([ '%02x' % h for h in inst.all_bytes ])).ljust(8)
 
-        if (inst.addr_mode == AddressModes.Extended) and ((inst.address & 0xFF00) == 0):
-            # render instruction as .byte sequence to prevent asf2mc8 from optimizing
-            # an extended address into a direct one, which breaks identical reassembly
+        # render instruction as a .byte sequence if asf2mc8 would optimize an
+        # extended address into a direct one, breaking identical reassembly
+        as_bytes = ((inst.addr_mode == AddressModes.Extended) and
+                    ((inst.address & 0xFF00) == 0) and
+                    (inst.opcode not in (0x21, 0x31)))
+
+        if as_bytes:
             line = ('    .byte ' + ', '.join([ '0x%02x' % h for h in inst.all_bytes ])).ljust(28)
             line += (';%04x  %s' % (address, hexdump)).ljust(19)
             line += disasm
