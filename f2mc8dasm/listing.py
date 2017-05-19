@@ -45,8 +45,10 @@ class Printer(object):
                 used_symbols.add(inst.bittest_address)
 
         for address in sorted(used_symbols):
-            symbol = self.symbols[address]
-            print("    %s = 0x%02x" % (symbol, address))
+            name, comment = self.symbols[address]
+            line = ("    %s = 0x%02x" % (name, address)).ljust(28)
+            line += ";%s" % comment
+            print(line)
 
     def print_data_line(self, address):
         line = ('    .byte 0x%02X' % self.memory[address]).ljust(28)
@@ -109,7 +111,8 @@ class Printer(object):
 
     def format_ext_address(self, address):
         if address in self.symbols:
-            return self.symbols[address]
+            name, comment = self.symbols[address]
+            return name
         if address >= self.start_address: # XXX should be put in symbols instead
             if self.memory.is_jump_target(address):
                 return 'lab_%04x' % address
@@ -119,5 +122,6 @@ class Printer(object):
 
     def format_dir_address(self, address):
         if address in self.symbols:
-            return self.symbols[address]
+            name, comment = self.symbols[address]
+            return name
         return '0x%02x' % address
