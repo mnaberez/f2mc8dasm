@@ -78,9 +78,10 @@ class Printer(object):
 
         # render instruction as .byte sequence if it is a relative branch
         # to an address that does not have a symbol
-        bad_branch = ((inst.address not in self.symbols) and
-                      (inst.addr_mode in (AddressModes.Relative,
-                                          AddressModes.BitDirectWithRelative)))
+        rel = (inst.addr_mode in (AddressModes.Relative,
+                                  AddressModes.BitDirectWithRelative))
+        bad_branch = (rel and ((inst.address not in self.symbols) or
+                               (inst.address < self.start_address)))
 
         if optimizable or bad_branch:
             line = ('    .byte ' + ', '.join([ '0x%02x' % h for h in inst.all_bytes ])).ljust(28)
