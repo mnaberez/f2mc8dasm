@@ -45,10 +45,11 @@ class Printer(object):
                 used_symbols.add(inst.bittest_address)
 
         for address in sorted(used_symbols):
-            name, comment = self.symbols[address]
-            line = ("    %s = 0x%02x" % (name, address)).ljust(28)
-            line += ";%s" % comment
-            print(line)
+            if address < self.start_address:
+                name, comment = self.symbols[address]
+                line = ("    %s = 0x%02x" % (name, address)).ljust(28)
+                line += ";%s" % comment
+                print(line)
 
     def print_data_line(self, address):
         line = ('    .byte 0x%02X' % self.memory[address]).ljust(28)
@@ -71,13 +72,19 @@ class Printer(object):
 
         # render instruction as a .byte sequence if asf2mc8 would optimize an
         # extended address into a direct one, breaking identical reassembly
-        as_bytes = ((inst.addr_mode == AddressModes.Extended) and
-                    ((inst.address & 0xFF00) == 0) and
-                    (inst.opcode not in (0x21, 0x31)))
+        optimizable = ((inst.addr_mode == AddressModes.Extended) and
+                      ((inst.address & 0xFF00) == 0) and
+                      (inst.opcode not in (0x21, 0x31)))
 
-        if as_bytes:
+        # render instruction as .byte sequence if it is a relative branch
+        # to an address that does not have a symbol
+        bad_branch = ((inst.address not in self.symbols) and
+                      (inst.addr_mode in (AddressModes.Relative,
+                                          AddressModes.BitDirectWithRelative)))
+
+        if optimizable or bad_branch:
             line = ('    .byte ' + ', '.join([ '0x%02x' % h for h in inst.all_bytes ])).ljust(28)
-            line += (';%04x  %s' % (address, hexdump)).ljust(19)
+            line += (';%04x  %s    XXX ' % (address, hexdump)).ljust(19)
             line += disasm
         else:
             line = '    ' + disasm.ljust(24) + ';%04x  %s' % (address, hexdump)
@@ -113,11 +120,6 @@ class Printer(object):
         if address in self.symbols:
             name, comment = self.symbols[address]
             return name
-        if address >= self.start_address: # XXX should be put in symbols instead
-            if self.memory.is_jump_target(address):
-                return 'lab_%04x' % address
-            if self.memory.is_call_target(address):
-                return 'sub_%04x' % address
         return '0x%04x' % address
 
     def format_dir_address(self, address):

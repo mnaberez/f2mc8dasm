@@ -31,13 +31,24 @@ class Memory(object):
     # Instruction Storage
 
     def set_instruction(self, address, inst):
+        inst_len = len(inst)
+
+        # ensure the memory locations are only assigned to one instruction
+        for i in range(inst_len):
+            addr = (address + i) & 0xFFFF
+            if not self.is_data(addr):
+                msg = "Attempt to overwrite existing instruction at %04x"
+                raise Exception(msg % addr)
+
+        # store instruction and mark its locations
         self.instructions[address] = inst
-        for i in range(len(inst)):
-            if i == 0:
+        for i in range(inst_len):
+            addr = (address + i) & 0xFFFF
+            if addr == address:
                 loc_type = LocationTypes.InstructionStart
             else:
                 loc_type = LocationTypes.InstructionContinuation
-            self.types[address + i] = loc_type
+            self.types[addr] = loc_type
 
     def get_instruction(self, address):
         return self.instructions[address]
@@ -49,8 +60,11 @@ class Memory(object):
 
     # Location Types
 
-    def is_data(self, address):
-        return self.types[address] == LocationTypes.Data
+    def is_data(self, address, length=1):
+        for i in range(length):
+            if self.types[(address + i) & 0xFFFF] != LocationTypes.Data:
+                return False
+        return True
 
     def is_instruction_start(self, address):
         return self.types[address] == LocationTypes.InstructionStart

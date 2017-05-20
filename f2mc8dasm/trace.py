@@ -17,6 +17,9 @@ class Tracer(object):
             pc = self.queue.pop()
 
             inst = disassemble_func(self.memory, pc)
+            if not self.memory.is_data(pc, len(inst)):
+                continue  # ignore jump to middle of existing instruction
+
             self.memory.set_instruction(pc, inst)
             new_pc = (pc + len(inst)) & 0xFFFF
 

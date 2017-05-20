@@ -29,9 +29,19 @@ def main():
     tracer = Tracer(memory, entry_points, vectors, traceable_range)
     tracer.trace(disassemble_inst)
 
+    # XXX move symbol generation to a more sensible place
+    symbols = MB89620R_SYMBOLS.copy()
+    for address in range(start_address, len(memory)):
+        if memory.is_call_target(address):
+            if memory.is_instruction_start(address):
+                symbols[address] = ('sub_%04x' % address, '')
+        elif memory.is_jump_target(address):
+            if memory.is_instruction_start(address):
+                symbols[address] = ('lab_%04x' % address, '')
+
     printer = Printer(memory,
                       start_address,
-                      MB89620R_SYMBOLS
+                      symbols,
                       )
     printer.print_listing()
 
