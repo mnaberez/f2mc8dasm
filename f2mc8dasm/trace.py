@@ -13,15 +13,22 @@ class Tracer(object):
             self.enqueue_vector(address)
 
     def trace(self, disassemble_func):
+        mem_len = len(self.memory)
+
         while len(self.queue):
             pc = self.queue.pop()
 
             inst = disassemble_func(self.memory, pc)
-            if not self.memory.is_data(pc, len(inst)):
-                continue  # ignore jump to middle of existing instruction
+            inst_len = len(inst)
+
+            if (pc + inst_len) >= mem_len:
+                continue  # ignore instruction that would wrap around memory
+
+            if not self.memory.is_data(pc, inst_len):
+                continue  # ignore instruction that would overlap another
 
             self.memory.set_instruction(pc, inst)
-            new_pc = (pc + len(inst)) & 0xFFFF
+            new_pc = (pc + inst_len) & 0xFFFF
 
             if inst.flow_type == FlowTypes.Continue:
                 self.enqueue_address(new_pc)
