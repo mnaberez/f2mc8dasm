@@ -58,6 +58,12 @@ class Memory(object):
             if self.types[a] == LocationTypes.InstructionStart:
                 yield self.instructions[a]
 
+    # Vector Storage
+
+    def set_vector(self, address):
+        self.types[address] = LocationTypes.VectorStart
+        self.types[(address + 1) & 0xFFFF] = LocationTypes.VectorContinuation
+
     # Location Types
 
     def is_data(self, address, length=1):
@@ -72,6 +78,12 @@ class Memory(object):
     def is_instruction_continuation(self, address):
         return self.types[address] == LocationTypes.InstructionContinuation
 
+    def is_vector_start(self, address):
+        return self.types[address] == LocationTypes.VectorStart
+
+    def is_vector_continuation(self, address):
+        return self.types[address] == LocationTypes.VectorContinuation
+
     # Location Annotations
 
     def annotate_jump_target(self, address):
@@ -80,35 +92,25 @@ class Memory(object):
     def annotate_call_target(self, address):
         self.annotations[address] = LocationAnnotations.CallTarget
 
-    def annotate_vector(self, address):
-        self.annotations[address] = LocationAnnotations.VectorStart
-        self.annotations[address + 1] = LocationAnnotations.VectorContinuation
-
     def is_jump_target(self, address):
         return self.annotations[address] == LocationAnnotations.JumpTarget
 
     def is_call_target(self, address):
         return self.annotations[address] == LocationAnnotations.CallTarget
 
-    def is_vector_start(self, address):
-        return self.annotations[address] == LocationAnnotations.VectorStart
-
-    def is_vector_continuation(self, address):
-        return self.annotations[address] == LocationAnnotations.VectorContinuation
-
 
 class LocationTypes(object):
     Data = 0
     InstructionStart = 1
     InstructionContinuation = 2
+    VectorStart = 3
+    VectorContinuation = 4
 
 
 class LocationAnnotations(object):
     Unknown = 0
     JumpTarget = 1
     CallTarget = 2
-    VectorStart = 3
-    VectorContinuation = 4
 
 
 def _slice_to_range(slc):

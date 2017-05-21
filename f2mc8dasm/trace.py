@@ -55,12 +55,13 @@ class Tracer(object):
 
     def enqueue_address(self, address):
         if address in self.traceable_range:
-            self.queue.push(address)
+            if self.memory.is_data(address):
+                self.queue.push(address)
 
     def enqueue_vector(self, address):
         target = self.memory.read_word(address)
         if (target != 0xFFFF) and (target in self.traceable_range):
-            self.memory.annotate_vector(address)
+            self.memory.set_vector(address)
             self.memory.annotate_jump_target(target)
             self.enqueue_address(target)
 
