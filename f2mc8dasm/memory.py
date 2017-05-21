@@ -9,7 +9,7 @@ class Memory(object):
         for address in range(len(self.contents)):
             self.instructions[address] = None
             self.types[address] = LocationTypes.Data
-            self.annotations[address] = LocationAnnotations.Unknown
+            self.annotations[address] = set()
 
     def __len__(self):
         return len(self.contents)
@@ -87,19 +87,20 @@ class Memory(object):
     # Location Annotations
 
     def annotate_jump_target(self, address):
-        self.annotations[address] = LocationAnnotations.JumpTarget
+        self.annotations[address].add(LocationAnnotations.JumpTarget)
 
     def annotate_call_target(self, address):
-        self.annotations[address] = LocationAnnotations.CallTarget
+        self.annotations[address].add(LocationAnnotations.CallTarget)
 
     def is_jump_target(self, address):
-        return self.annotations[address] == LocationAnnotations.JumpTarget
+        return LocationAnnotations.JumpTarget in self.annotations[address]
 
     def is_call_target(self, address):
-        return self.annotations[address] == LocationAnnotations.CallTarget
+        return LocationAnnotations.CallTarget in self.annotations[address]
 
 
 class LocationTypes(object):
+    '''A memory location has exactly one type'''
     Data = 0
     InstructionStart = 1
     InstructionContinuation = 2
@@ -108,9 +109,9 @@ class LocationTypes(object):
 
 
 class LocationAnnotations(object):
-    Unknown = 0
-    JumpTarget = 1
-    CallTarget = 2
+    '''A memory location can have zero or more annotations'''
+    JumpTarget = 0
+    CallTarget = 1
 
 
 def _slice_to_range(slc):
