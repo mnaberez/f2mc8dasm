@@ -1,4 +1,41 @@
-MB89620R_SYMBOLS = {
+F2MC8L_COMMON_SYMBOLS = {
+    0xffc0: ('callv_0_vect', 'callv #0'),
+    0xffc2: ('callv_1_vect', 'callv #1'),
+    0xffc4: ('callv_2_vect', 'callv #2'),
+    0xffc6: ('callv_3_vect', 'callv #3'),
+    0xffc8: ('callv_4_vect', 'callv #4'),
+    0xffca: ('callv_5_vect', 'callv #5'),
+    0xffcc: ('callv_6_vect', 'callv #6'),
+    0xffce: ('callv_7_vect', 'callv #7'),
+    0xffd0: ('irq_21_vect', 'interrupt #21'),
+    0xffd2: ('irq_20_vect', 'interrupt #20'),
+    0xffd4: ('irq_19_vect', 'interrupt #19'),
+    0xffd6: ('irq_18_vect', 'interrupt #18'),
+    0xffd8: ('irq_17_vect', 'interrupt #17'),
+    0xffda: ('irq_16_vect', 'interrupt #16'),
+    0xffdc: ('irq_15_vect', 'interrupt #15'),
+    0xffde: ('irq_14_vect', 'interrupt #14'),
+    0xffe0: ('irq_13_vect', 'interrupt #13'),
+    0xffe2: ('irq_12_vect', 'interrupt #12'),
+    0xffe4: ('irq_11_vect', 'interrupt #11'),
+    0xffe6: ('irq_10_vect', 'interrupt #10'),
+    0xffe8: ('irq_9_vect',  'interrupt #9'),
+    0xffea: ('irq_8_vect',  'interrupt #8'),
+    0xffec: ('irq_7_vect',  'interrupt #7'),
+    0xffee: ('irq_6_vect',  'interrupt #6'),
+    0xfff0: ('irq_5_vect',  'interrupt #5'),
+    0xfff2: ('irq_4_vect',  'interrupt #4'),
+    0xfff4: ('irq_3_vect',  'interrupt #3'),
+    0xfff6: ('irq_2_vect',  'interrupt #2'),
+    0xfff8: ('irq_1_vect',  'interrupt #1'),
+    0xfffa: ('irq_0_vect',  'interrupt #0'),
+    0xfffc: ('reserved',    'reserved byte'),
+    0xfffd: ('mode',        'mode byte'),
+    0xfffe: ('reset_vect',  'reset'),
+}
+
+MB89620R_SYMBOLS = F2MC8L_COMMON_SYMBOLS.copy()
+MB89620R_SYMBOLS.update({
     0x00: ('pdr0', 'port 0 data register'),
     0x01: ('ddr0', 'port 0 data direction register'),
     0x02: ('pdr1', 'port 1 data register'),
@@ -41,9 +78,10 @@ MB89620R_SYMBOLS = {
     0x7d: ('ilr2', 'interrupt level setting register 2'),
     0x7e: ('ilr3', 'interrupt level setting register 3'),
     # 0x7f vacant
-}
+})
 
-MB89670_SYMBOLS = {
+MB89670_SYMBOLS = F2MC8L_COMMON_SYMBOLS.copy()
+MB89670_SYMBOLS.update({
     0x00: ('pdr0', 'port 0 data register'),
     0x01: ('ddr0', 'port 0 data direction register'),
     0x02: ('pdr1', 'port 1 data register'),
@@ -121,4 +159,4 @@ MB89670_SYMBOLS = {
     0x7d: ('ilr2', 'interrupt-level setting register 2'),
     0x7e: ('ilr3', 'interrupt-level setting register 3'),
     # 0x7f vacant
-}
+})

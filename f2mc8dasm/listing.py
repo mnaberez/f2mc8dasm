@@ -61,6 +61,9 @@ class Printer(object):
         target = self.format_ext_address(target)
         line = ('    .word %s' % target).ljust(28)
         line += ';%04x  %02x %02x       VECTOR' % (address, self.memory[address], self.memory[address+1])
+        name, comment = self.symbols.get(address, ('',''))
+        if comment:
+            line += ' ' + comment
         print(line)
 
     def print_code_line(self, address, inst):
