@@ -77,6 +77,17 @@ def main():
     # pu-1666a main mcu known code locations
     entry_points += [0xf0f5, 0xf0e0]
 
+    # pu-1666a sub mcu jump tables
+    # jump_table(0xe63f, 15)
+    # jump_table(0xe726, 7)
+    # jump_table(0xe791, 24)
+    # jump_table(0xe961, 8)
+    # jump_table(0xea21, 14)
+    # jump_table(0xea9f, 10)
+    # jump_table(0xeba8, 8)
+    # jump_table(0xec42, 2)
+    # jump_table(0xec80, 2)
+
     traceable_range = range(start_address, start_address + len(rom) + 1)
     tracer = Tracer(memory, entry_points, vectors, traceable_range)
     tracer.trace(disassemble_inst)

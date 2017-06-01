@@ -1,5 +1,3 @@
-import struct
-
 from f2mc8dasm.tables import FlowTypes
 
 class Tracer(object):
@@ -43,11 +41,10 @@ class Tracer(object):
                 self.memory.annotate_call_target(inst.address)
                 self.enqueue_address(inst.address)
                 self.enqueue_address(new_pc)
-            elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
-                for vector in self.parse_vectors_from_case_idiom(pc):
-                    self.enqueue_vector(vector)
             elif inst.flow_type == FlowTypes.IndirectSubroutineCall:
                 self.enqueue_address(new_pc)
+            elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
+                pass
             elif inst.flow_type == FlowTypes.SubroutineReturn:
                 pass
             else:
@@ -66,38 +63,6 @@ class Tracer(object):
         if (target != 0xFFFF) and (target in self.traceable_range):
             self.memory.annotate_jump_target(target)
             self.enqueue_address(target)
-
-    def parse_vectors_from_case_idiom(self, address):
-        # extract code that may be a case statement idiom
-        case_address = (address - 12) & 0xFFFF
-        table_address = (address + 1) & 0xFFFF
-        code = list(self.memory[case_address:table_address])
-
-        # template for case statement idiom
-        expected = [0x14, None,         # cmp a, #{table_size}
-                    0xf8, None,         # bhs {out_of_range}
-                    0x81,               # clrc
-                    0x02,               # rol c
-                    0xe4, None, None,   # movw a, {vector_table}
-                    0x81,               # clrc
-                    0x23,               # addcw a
-                    0x93,               # movw a, @a
-                    0xe0                # jmp @a
-                    ]                   # .word addr, .word addr, ...
-
-        # fill in missing values in template
-        expected[1], expected[3] = code[1], code[3]
-        expected[7], expected[8] = bytearray(struct.pack('>H', table_address))
-
-        # extract vectors from table if the code matched
-        vectors = set()
-        if expected == code:
-            table_size = code[1]
-            for offset in range(0, table_size * 2, 2):
-                vector = (table_address + offset) & 0xFFFF
-                # TODO will overwrite data location, should only overwrite unknown
-                vectors.add(vector)
-        return vectors
 
     def mark_unknown_memory_as_data(self):
         for address in self.traceable_range:
