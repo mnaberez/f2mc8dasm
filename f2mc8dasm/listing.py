@@ -26,6 +26,12 @@ class Printer(object):
                 if self.memory.is_vector_start(address):
                     self.print_vector_line(address)
                     address += 2
+                elif self.memory.is_mode_byte(address):
+                    self.print_mode_byte_line(address)
+                    address += 1
+                elif self.memory.is_reserved_byte(address):
+                    self.print_reserved_byte_line(address)
+                    address += 1
                 else:
                     self.print_data_line(address)
                     address += 1
@@ -64,6 +70,16 @@ class Printer(object):
         name, comment = self.symbols.get(address, ('',''))
         if comment:
             line += ' ' + comment
+        print(line)
+
+    def print_mode_byte_line(self, address):
+        line = ('    .byte 0x%02X' % self.memory[address]).ljust(28)
+        line += ';%04x  %02x          MODE' % (address, self.memory[address])
+        print(line)
+
+    def print_reserved_byte_line(self, address):
+        line = ('    .byte 0x%02X' % self.memory[address]).ljust(28)
+        line += ';%04x  %02x          RESERVED' % (address, self.memory[address])
         print(line)
 
     def print_code_line(self, address, inst):

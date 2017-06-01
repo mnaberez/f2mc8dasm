@@ -64,6 +64,14 @@ class Memory(object):
         self.types[address] = LocationTypes.VectorStart
         self.types[(address + 1) & 0xFFFF] = LocationTypes.VectorContinuation
 
+    # Special Locations
+
+    def set_mode_byte(self, address):
+        self.types[address] = LocationTypes.ModeByte
+
+    def set_reserved_byte(self, address):
+        self.types[address] = LocationTypes.ReservedByte
+
     # Location Types
 
     def is_data(self, address, length=1):
@@ -83,6 +91,12 @@ class Memory(object):
 
     def is_vector_continuation(self, address):
         return self.types[address] == LocationTypes.VectorContinuation
+
+    def is_mode_byte(self, address):
+        return self.types[address] == LocationTypes.ModeByte
+
+    def is_reserved_byte(self, address):
+        return self.types[address] == LocationTypes.ReservedByte
 
     # Location Annotations
 
@@ -106,6 +120,8 @@ class LocationTypes(object):
     InstructionContinuation = 2
     VectorStart = 3
     VectorContinuation = 4
+    ModeByte = 5
+    ReservedByte = 6
 
 
 class LocationAnnotations(object):

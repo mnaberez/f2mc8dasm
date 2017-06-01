@@ -9,9 +9,11 @@ from f2mc8dasm.symbols import MB89670_SYMBOLS
 def main():
     with open(sys.argv[1], 'rb') as f:
         rom = bytearray(f.read())
-
     start_address = 0x10000 - len(rom)
+
     memory = Memory(rom)
+    memory.set_reserved_byte(0xfffc)
+    memory.set_mode_byte(0xfffd)
 
     entry_points = []
     vectors = [
