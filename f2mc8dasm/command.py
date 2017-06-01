@@ -28,65 +28,11 @@ def main():
     ]
 
     # XXX put this in a more sensible place
-    vectors += [
-        # pu-1666a main mcu indirect jmp table at 0xefbb
-        0xefbd,0xefc2,0xefc7,0xefcc,0xefd1,0xefd6,
-    ]
     def jump_table(start_address, length):
         address = start_address
         for i in range(length):
             vectors.append(address)
             address += 2
-    # pu-1666a main mcu jump tables
-    jump_table(0x81a8, 6)
-    jump_table(0xf139, 4)
-    jump_table(0xd7e1, 16)
-    jump_table(0xde79, 9)
-    jump_table(0xedd8, 4)
-    jump_table(0xee39, 7)
-    jump_table(0xee77, 6)
-    jump_table(0xf254, 9)
-    jump_table(0xd501, 16)
-    jump_table(0xd528, 16)
-    jump_table(0x8f44, 14)
-    jump_table(0x958a, 51)
-    jump_table(0x9a51, 33)
-    jump_table(0x9ee0, 11)
-    jump_table(0xa4a0, 11)
-    jump_table(0xac03, 17)
-    jump_table(0xae73, 8)
-    jump_table(0xb318, 17)
-    jump_table(0xb467, 7)
-    jump_table(0xb5a4, 7)
-    jump_table(0xbe62, 8)
-    jump_table(0xbe62, 6)
-    jump_table(0xc354, 11)
-    jump_table(0xc4c9, 10)
-    jump_table(0xc9ec, 6)
-    jump_table(0xca39, 6)
-    jump_table(0xcb16, 6)
-    jump_table(0xe223, 7)
-    jump_table(0xe3bd, 14)
-    jump_table(0xee20, 3)
-    jump_table(0xee5b, 6)
-    jump_table(0xf4b7, 6)
-    jump_table(0xfe00, 66)
-    # pu-1666a main mcu branch-always
-    memory.set_data(0x869e) # beq at 0x869c always branches
-    memory.set_data(0x86ac) # beq at 0x86aa always branches
-    # pu-1666a main mcu known code locations
-    entry_points += [0xf0f5, 0xf0e0]
-
-    # pu-1666a sub mcu jump tables
-    # jump_table(0xe63f, 15)
-    # jump_table(0xe726, 7)
-    # jump_table(0xe791, 24)
-    # jump_table(0xe961, 8)
-    # jump_table(0xea21, 14)
-    # jump_table(0xea9f, 10)
-    # jump_table(0xeba8, 8)
-    # jump_table(0xec42, 2)
-    # jump_table(0xec80, 2)
 
     traceable_range = range(start_address, start_address + len(rom) + 1)
     tracer = Tracer(memory, entry_points, vectors, traceable_range)
