@@ -39,7 +39,7 @@ def main():
             address += 2
     # pu-1666a main mcu jump tables
     jump_table(0x81a8, 6)
-    jump_table(0xf139, 6)
+    jump_table(0xf139, 4)
     jump_table(0xd7e1, 16)
     jump_table(0xde79, 9)
     jump_table(0xedd8, 4)
@@ -71,6 +71,11 @@ def main():
     jump_table(0xee5b, 6)
     jump_table(0xf4b7, 6)
     jump_table(0xfe00, 66)
+    # pu-1666a main mcu branch-always
+    memory.set_data(0x869e) # beq at 0x869c always branches
+    memory.set_data(0x86ac) # beq at 0x86aa always branches
+    # pu-1666a main mcu known code locations
+    entry_points += [0xf0f5, 0xf0e0]
 
     traceable_range = range(start_address, start_address + len(rom) + 1)
     tracer = Tracer(memory, entry_points, vectors, traceable_range)

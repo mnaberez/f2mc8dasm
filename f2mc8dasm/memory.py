@@ -8,7 +8,7 @@ class Memory(object):
 
         for address in range(len(self.contents)):
             self.instructions[address] = None
-            self.types[address] = LocationTypes.Data
+            self.types[address] = LocationTypes.Unknown
             self.annotations[address] = set()
 
     def __len__(self):
@@ -36,8 +36,8 @@ class Memory(object):
         # ensure the memory locations are only assigned to one instruction
         for i in range(inst_len):
             addr = (address + i) & 0xFFFF
-            if not self.is_data(addr):
-                msg = "Attempt to overwrite existing instruction at %04x"
+            if not self.is_unknown(addr):
+                msg = "Attempt to overwrite non-unknown at %04x"
                 raise Exception(msg % addr)
 
         # store instruction and mark its locations
@@ -58,6 +58,11 @@ class Memory(object):
             if self.types[a] == LocationTypes.InstructionStart:
                 yield self.instructions[a]
 
+    # Data Storage
+
+    def set_data(self, address):
+        self.types[address] = LocationTypes.Data
+
     # Vector Storage
 
     def set_vector(self, address):
@@ -74,11 +79,14 @@ class Memory(object):
 
     # Location Types
 
-    def is_data(self, address, length=1):
+    def is_unknown(self, address, length=1):
         for i in range(length):
-            if self.types[(address + i) & 0xFFFF] != LocationTypes.Data:
+            if self.types[(address + i) & 0xFFFF] != LocationTypes.Unknown:
                 return False
         return True
+
+    def is_data(self, address):
+        return self.types[address] == LocationTypes.Data
 
     def is_instruction_start(self, address):
         return self.types[address] == LocationTypes.InstructionStart
@@ -115,13 +123,14 @@ class Memory(object):
 
 class LocationTypes(object):
     '''A memory location has exactly one type'''
-    Data = 0
-    InstructionStart = 1
-    InstructionContinuation = 2
-    VectorStart = 3
-    VectorContinuation = 4
-    ModeByte = 5
-    ReservedByte = 6
+    Unknown = 0
+    Data = 1
+    InstructionStart = 2
+    InstructionContinuation = 3
+    VectorStart = 4
+    VectorContinuation = 5
+    ModeByte = 6
+    ReservedByte = 7
 
 
 class LocationAnnotations(object):

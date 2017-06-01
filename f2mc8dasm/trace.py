@@ -24,7 +24,7 @@ class Tracer(object):
             if (pc + inst_len) >= mem_len:
                 continue  # ignore instruction that would wrap around memory
 
-            if not self.memory.is_data(pc, inst_len):
+            if not self.memory.is_unknown(pc, inst_len):
                 continue  # ignore instruction that would overlap another
 
             self.memory.set_instruction(pc, inst)
@@ -53,9 +53,11 @@ class Tracer(object):
             else:
                 raise NotImplementedError()
 
+        self.mark_unknown_memory_as_data()
+
     def enqueue_address(self, address):
         if address in self.traceable_range:
-            if self.memory.is_data(address):
+            if self.memory.is_unknown(address):
                 self.queue.push(address)
 
     def enqueue_vector(self, address):
@@ -93,8 +95,14 @@ class Tracer(object):
             table_size = code[1]
             for offset in range(0, table_size * 2, 2):
                 vector = (table_address + offset) & 0xFFFF
+                # TODO will overwrite data location, should only overwrite unknown
                 vectors.add(vector)
         return vectors
+
+    def mark_unknown_memory_as_data(self):
+        for address in self.traceable_range:
+            if self.memory.is_unknown(address):
+                self.memory.set_data(address)
 
 
 class TraceQueue(object):
