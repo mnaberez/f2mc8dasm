@@ -17,12 +17,14 @@ class Printer(object):
                 inst = self.memory.get_instruction(address)
                 if not last_line_code:
                     print('')
+                self.print_label(address)
                 self.print_code_line(address, inst)
                 address += len(inst.all_bytes)
                 last_line_code = True
             else:
                 if last_line_code:
                     print('')
+                self.print_label(address)
                 if self.memory.is_vector_start(address):
                     self.print_vector_line(address)
                     address += 2
@@ -57,6 +59,10 @@ class Printer(object):
                 line += ";%s" % comment
                 print(line)
 
+    def print_label(self, address):
+        if address in self.symbols:
+            print("\n%s:" % self.format_ext_address(address))
+
     def print_data_line(self, address):
         line = ('    .byte 0x%02X' % self.memory[address]).ljust(28)
         line += ';%04x  %02x          DATA %r ' % (address, self.memory[address], chr(self.memory[address]))
@@ -83,9 +89,6 @@ class Printer(object):
         print(line)
 
     def print_code_line(self, address, inst):
-        if self.memory.is_jump_target(address) or self.memory.is_call_target(address):
-            print("\n%s:" % self.format_ext_address(address))
-
         disasm = self.format_instruction(inst)
         hexdump = (' '.join([ '%02x' % h for h in inst.all_bytes ])).ljust(8)
 
