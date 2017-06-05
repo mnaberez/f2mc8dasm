@@ -116,6 +116,17 @@ class Memory(object):
     def is_reserved_byte(self, address):
         return self.types[address] == LocationTypes.ReservedByte
 
+    # Location Types (single- or multi-byte inquiry)
+
+    def is_single_byte_or_start_of_multibyte(self, address):
+        return not self.is_continuation_of_multibyte_type(address)
+
+    def is_continuation_of_multibyte_type(self, address):
+        return self.types[address] in (
+            LocationTypes.InstructionContinuation,
+            LocationTypes.VectorContinuation,
+            )
+
     # Location Annotations
 
     def annotate_jump_target(self, address):
