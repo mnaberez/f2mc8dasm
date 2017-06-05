@@ -100,7 +100,7 @@ MB89670_SYMBOLS.update({
     0x03: ('ddr1', 'port 1 data direction register'),
     0x04: ('pdr2', 'port 2 data register'),
     0x05: ('bctr', 'external bus pin control register'),
-    # 0x06-0x07 vacant
+    # 0x06 vacant
     0x07: ('sycc', 'system clock control register'),
     0x08: ('stbc', 'standby control register'),
     0x09: ('wdtc', 'watchdog timer control register'),
@@ -124,6 +124,7 @@ MB89670_SYMBOLS.update({
     # 0x1b vacant
     0x1c: ('smr',  'serial mode register'),
     0x1d: ('sdr',  'serial data register'),
+    # 0x1e-0x-1f vacant
     0x20: ('adc1', 'adc control register 1'),
     0x21: ('adc2', 'adc control register 2'),
     0x22: ('adch', 'adc data register high'),
@@ -155,6 +156,7 @@ MB89670_SYMBOLS.update({
     0x41: ('uscr', 'uart control register'),
     0x42: ('ustr', 'uart status register'),
     0x43: ('rxdr', 'read: uart receive data register, write: uart transmit data register'),
+    # 0x44 vacant
     0x45: ('rrdr', 'baud-rate generate reload data register'),
     # 0x46-0x47 vacant
     0x48: ('cntr4','pwm-control register 4'),
