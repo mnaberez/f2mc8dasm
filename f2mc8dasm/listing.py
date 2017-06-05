@@ -34,9 +34,11 @@ class Printer(object):
                 elif self.memory.is_reserved_byte(address):
                     self.print_reserved_byte_line(address)
                     address += 1
-                else:
+                elif self.memory.is_data(address):
                     self.print_data_line(address)
                     address += 1
+                else:
+                    raise NotImplementedError()
                 last_line_code = False
 
     def print_header(self):
