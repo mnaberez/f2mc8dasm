@@ -1,3 +1,4 @@
+import re
 import unittest
 import f2mc8dasm.symbols
 
@@ -26,3 +27,12 @@ class SymbolTests(unittest.TestCase):
                 msg = "Symbol name %r repeats in %r" % (name, dict_name)
                 self.assertTrue((name not in names_seen), msg)
                 names_seen.add(name)
+
+    def test_symbol_names_are_legal_for_asf2mc8(self):
+        pat = re.compile(r'\A[a-z\.\$_]{1}[\da-z\.\$_]{0,78}\Z', re.IGNORECASE)
+        for dict_name in _DICT_NAMES:
+            d = getattr(f2mc8dasm.symbols, dict_name)
+            for address, (name, comment) in d.items():
+                msg = "Symbol name %r not valid in %r" % (name, dict_name)
+                self.assertTrue(pat.match(name), msg)
+
