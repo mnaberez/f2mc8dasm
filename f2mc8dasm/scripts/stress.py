@@ -19,11 +19,11 @@ def main():
     os.chdir(dirname)
     try:
         while True:
-            with open('/dev/urandom', 'rb') as f:
-                data = f.read(random.randint(0, 0x10000-0x100))
+            size = random.randint(0, 0x10000-0x100)
+            data = os.urandom(size)
             with open('original.bin', 'wb') as f:
                 f.write(data)
-            print("\nWrote %d random bytes to original.bin" % len(data))
+            print("\nWrote %d random bytes to original.bin" % size)
 
             run('rm -f disasm.*')
             run('f2mc8dasm original.bin > disasm.asm')
