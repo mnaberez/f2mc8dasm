@@ -56,18 +56,28 @@ class Memory(object):
     def iter_instructions(self, address=0):
         for a in range(address, len(self.contents)):
             if self.types[a] == LocationTypes.InstructionStart:
-                yield self.instructions[a]
-
-    # Data Storage
-
-    def set_data(self, address):
-        self.types[address] = LocationTypes.Data
+                yield a, self.instructions[a]
 
     # Vector Storage
 
     def set_vector(self, address):
         self.types[address] = LocationTypes.VectorStart
         self.types[(address + 1) & 0xFFFF] = LocationTypes.VectorContinuation
+
+    def get_vector(self, address):
+        high = self.contents[address]
+        low = self.contents[(address + 1) & 0xFFFF]
+        return (high << 8) + low
+
+    def iter_vectors(self, address=0):
+        for a in range(address, len(self.contents)):
+            if self.types[a] == LocationTypes.VectorStart:
+                yield a, self.get_vector(a)
+
+    # Data Storage
+
+    def set_data(self, address):
+        self.types[address] = LocationTypes.Data
 
     # Special Locations
 

@@ -46,11 +46,15 @@ class Printer(object):
 
     def print_symbols(self):
         used_symbols = set()
-        for inst in self.memory.iter_instructions():
+        for address, inst in self.memory.iter_instructions():
             if inst.address in self.symbols:
                 used_symbols.add(inst.address)
             if inst.bittest_address in self.symbols:
                 used_symbols.add(inst.bittest_address)
+
+        for address, target in self.memory.iter_vectors():
+            if target in self.symbols:
+                used_symbols.add(target)
 
         for address in sorted(used_symbols):
             if address < self.start_address:
