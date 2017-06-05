@@ -4,8 +4,7 @@ from f2mc8dasm.disasm import disassemble_inst
 from f2mc8dasm.trace import Tracer
 from f2mc8dasm.memory import Memory
 from f2mc8dasm.listing import Printer
-from f2mc8dasm.tables import AddressModes
-from f2mc8dasm.symbols import MB89670_SYMBOLS
+from f2mc8dasm.symbols import MB89620R_SYMBOLS, SymbolTable
 
 def main():
     with open(sys.argv[1], 'rb') as f:
@@ -39,27 +38,12 @@ def main():
     tracer = Tracer(memory, entry_points, vectors, traceable_range)
     tracer.trace(disassemble_inst)
 
-    # XXX move symbol generation to a more sensible place
-    symbols = MB89670_SYMBOLS.copy()
-
-    for address in range(start_address, len(memory)):
-        if memory.is_call_target(address):
-            if memory.is_instruction_start(address):
-                symbols[address] = ('sub_%04x' % address, '')
-        elif memory.is_jump_target(address):
-            if memory.is_instruction_start(address):
-                symbols[address] = ('lab_%04x' % address, '')
-
-    for inst in memory.iter_instructions():
-        if inst.addr_mode != AddressModes.ImmediateWord:
-            continue
-        if inst.immediate >= start_address:
-            if address != 0xFFFF: # XXX
-                symbols[address] = ('dat_%04x' % address, '')
+    symbol_table = SymbolTable(MB89620R_SYMBOLS)
+    symbol_table.generate(memory, start_address) # xxx should pass traceable_range
 
     printer = Printer(memory,
                       start_address,
-                      symbols,
+                      symbol_table.symbols, # xxx should pass symbol_table
                       )
     printer.print_listing()
 
