@@ -67,7 +67,8 @@ class Printer(object):
 
     def print_label(self, address):
         if address in self.symbols:
-            print("\n%s:" % self.format_ext_address(address))
+            if not self.symbols[address][0].endswith("_vect"): # XXX
+                print("\n%s:" % self.format_ext_address(address))
 
     def print_data_line(self, address):
         line = ('    .byte 0x%02X' % self.memory[address]).ljust(28)
@@ -124,7 +125,7 @@ class Printer(object):
 
         if inst.immediate is not None:
             d['IMB'] = '0x%02x' % inst.immediate
-            d['IMW'] = '0x%04x' % inst.immediate
+            d['IMW'] = self.format_ext_address(inst.immediate)
         if inst.address is not None:
             d['EXT'] = self.format_ext_address(inst.address)
             d['REL'] = self.format_ext_address(inst.address)
