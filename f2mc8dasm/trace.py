@@ -48,7 +48,9 @@ class Tracer(object):
             elif inst.flow_type == FlowTypes.SubroutineReturn:
                 pass
             else:
-                raise NotImplementedError()
+                msg = "Unhandled flow type %r at 0x%04x" % (
+                    self.memory.types[pc], inst.flow_type)
+                raise NotImplementedError(msg) # always a bug
 
         self.mark_unknown_memory_as_data()
 

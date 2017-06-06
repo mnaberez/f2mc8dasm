@@ -38,7 +38,9 @@ class Printer(object):
                     self.print_data_line(address)
                     address += 1
                 else:
-                    raise NotImplementedError()
+                    msg = "Unhandled location type %r at 0x%04x" % (
+                        self.memory.types[address], address)
+                    raise NotImplementedError(msg) # always a bug
                 last_line_code = False
 
     def print_header(self):
