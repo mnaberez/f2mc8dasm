@@ -6,25 +6,22 @@ class Printer(object):
         self.memory = memory
         self.start_address = start_address
         self.symbols = symbols
+        self.last_line_type = None
 
     def print_listing(self):
         self.print_header()
         self.print_symbols()
-        last_line_code = True
+
         address = self.start_address
         while address < len(self.memory):
+            self.print_blank(address)
+            self.print_label(address)
+
             if self.memory.is_instruction_start(address):
                 inst = self.memory.get_instruction(address)
-                if not last_line_code:
-                    print('')
-                self.print_label(address)
-                self.print_code_line(address, inst)
-                address += len(inst.all_bytes)
-                last_line_code = True
+                self.print_instruction_line(address, inst)
+                address += len(inst)
             else:
-                if last_line_code:
-                    print('')
-                self.print_label(address)
                 if self.memory.is_vector_start(address):
                     self.print_vector_line(address)
                     address += 2
@@ -41,7 +38,6 @@ class Printer(object):
                     msg = "Unhandled location type %r at 0x%04x" % (
                         self.memory.types[address], address)
                     raise NotImplementedError(msg) # always a bug
-                last_line_code = False
 
     def print_header(self):
         print('    .F2MC8L')
@@ -69,6 +65,15 @@ class Printer(object):
                 if comment:
                     line += ";%s" % comment
                 print(line)
+        print('')
+
+    def print_blank(self, address):
+        typ = self.memory.types[address]
+        if self.last_line_type is not None:
+            if typ != self.last_line_type:
+                if address not in self.symbols:
+                    print('')
+        self.last_line_type = typ
 
     def print_label(self, address):
         if address in self.symbols:
@@ -99,7 +104,7 @@ class Printer(object):
         line += ';%04x  %02x          RESERVED' % (address, self.memory[address])
         print(line)
 
-    def print_code_line(self, address, inst):
+    def print_instruction_line(self, address, inst):
         if inst.stores_immediate_word_in_pointer:
             if inst.immediate in self.symbols:
                 name, comment = self.symbols[inst.immediate]
