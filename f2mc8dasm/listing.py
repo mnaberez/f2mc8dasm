@@ -53,7 +53,7 @@ class Printer(object):
                 used_symbols.add(inst.address)
             if inst.bittest_address in self.symbols:
                 used_symbols.add(inst.bittest_address)
-            if inst.stores_immediate_word_in_ix_or_ep:
+            if inst.stores_immediate_word_in_pointer:
                 used_symbols.add(inst.immediate)
 
         for address, target in self.memory.iter_vectors():
@@ -98,7 +98,7 @@ class Printer(object):
         print(line)
 
     def print_code_line(self, address, inst):
-        if inst.stores_immediate_word_in_ix_or_ep or inst.stores_immediate_word_in_a:
+        if inst.stores_immediate_word_in_pointer or inst.stores_immediate_word_in_a:
             if inst.immediate in self.symbols:
                 name, comment = self.symbols[inst.immediate]
                 inst.disasm_template = inst.disasm_template.replace("IMW", name)

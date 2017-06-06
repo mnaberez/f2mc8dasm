@@ -42,11 +42,12 @@ class SymbolTable(object):
             if memory.is_single_byte_or_start_of_multibyte(inst.bittest_address):
                 self.symbols[inst.bittest_address] = ('mem_%04x' % inst.bittest_address, '')
 
-        # mov ix, #0x1234
-        # mov ep, #0x1234
+        # mov ep, #0x0123
+        # mov ix, #0x0123
+        # mov sp, #0x0123
         # symbols are always generated for immediate words loaded into pointers
         for address, inst in memory.iter_instructions():
-            if not inst.stores_immediate_word_in_ix_or_ep:
+            if not inst.stores_immediate_word_in_pointer:
                 continue
             if inst.immediate in self.symbols:
                 continue

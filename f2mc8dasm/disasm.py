@@ -34,12 +34,11 @@ class Instruction(object):
         return [self.opcode] + list(self.operands)
 
     @property
-    def stores_immediate_word_in_ix_or_ep(self):
+    def stores_immediate_word_in_pointer(self):
         if self.addr_mode == AddressModes.ImmediateWord:
-            if "ix" in self.disasm_template:
-                return True
-            if "ep" in self.disasm_template:
-                return True
+            for reg in ("ep", "ix", "sp"):
+                if reg in self.disasm_template:
+                    return True
         return False
 
     @property
