@@ -42,6 +42,13 @@ class Instruction(object):
                 return True
         return False
 
+    @property
+    def stores_immediate_word_in_a(self):
+        if self.addr_mode == AddressModes.ImmediateWord:
+            if "a" in self.disasm_template:
+                return True
+        return False
+
 
 def resolve_rel(pc, displacement):
     if displacement & 0x80:
