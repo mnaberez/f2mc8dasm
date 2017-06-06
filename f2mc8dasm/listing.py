@@ -53,6 +53,8 @@ class Printer(object):
                 used_symbols.add(inst.address)
             if inst.bittest_address in self.symbols:
                 used_symbols.add(inst.bittest_address)
+            if inst.stores_immediate_word_in_ix_or_ep:
+                used_symbols.add(inst.immediate)
 
         for address, target in self.memory.iter_vectors():
             if target in self.symbols:
@@ -62,7 +64,8 @@ class Printer(object):
             if address < self.start_address:
                 name, comment = self.symbols[address]
                 line = ("    %s = 0x%02x" % (name, address)).ljust(28)
-                line += ";%s" % comment
+                if comment:
+                    line += ";%s" % comment
                 print(line)
 
     def print_label(self, address):
@@ -95,6 +98,11 @@ class Printer(object):
         print(line)
 
     def print_code_line(self, address, inst):
+        if inst.stores_immediate_word_in_ix_or_ep:
+            if inst.immediate in self.symbols:
+                name, comment = self.symbols[inst.immediate]
+                inst.disasm_template = inst.disasm_template.replace("IMW", name)
+
         disasm = self.format_instruction(inst)
         hexdump = (' '.join([ '%02x' % h for h in inst.all_bytes ])).ljust(8)
 
@@ -116,7 +124,10 @@ class Printer(object):
             line += (';%04x  %s    XXX ' % (address, hexdump)).ljust(19)
             line += disasm
         else:
-            line = '    ' + disasm.ljust(24) + ';%04x  %s' % (address, hexdump)
+            line = '    ' + disasm.ljust(24)
+            if not line.endswith(' '):
+                line += ' '
+            line += ';%04x  %s' % (address, hexdump)
         print(line)
 
     def format_instruction(self, inst):

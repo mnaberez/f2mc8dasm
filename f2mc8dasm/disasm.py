@@ -33,6 +33,15 @@ class Instruction(object):
     def all_bytes(self):
         return [self.opcode] + list(self.operands)
 
+    @property
+    def stores_immediate_word_in_ix_or_ep(self):
+        if self.addr_mode == AddressModes.ImmediateWord:
+            if "ix" in self.disasm_template:
+                return True
+            if "ep" in self.disasm_template:
+                return True
+        return False
+
 
 def resolve_rel(pc, displacement):
     if displacement & 0x80:

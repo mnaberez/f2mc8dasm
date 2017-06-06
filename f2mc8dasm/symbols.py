@@ -1,5 +1,53 @@
 from f2mc8dasm.tables import AddressModes
 
+class SymbolTable(object):
+    def __init__(self, initial_symbols=None):
+        if initial_symbols is None:
+            initial_symbols = {}
+        self.symbols = initial_symbols.copy()
+
+    def generate(self, memory, start_address):
+        self.generate_code_symbols(memory, start_address)
+        self.generate_data_symbols(memory, start_address)
+
+    def generate_code_symbols(self, memory, start_address):
+        for address in range(start_address, len(memory)):
+            if memory.is_call_target(address):
+                if memory.is_instruction_start(address):
+                    self.symbols[address] = ('sub_%04x' % address, '')
+            elif memory.is_jump_target(address):
+                if memory.is_instruction_start(address):
+                    self.symbols[address] = ('lab_%04x' % address, '')
+
+    def generate_data_symbols(self, memory, start_address):
+        for address, inst in memory.iter_instructions():
+            if inst.address in self.symbols:
+                continue
+            if inst.addr_mode not in (AddressModes.Extended,
+                                      AddressModes.Direct,
+                                      AddressModes.DirectWithImmediateByte,
+                                      AddressModes.BitDirect):
+                continue
+            if memory.is_single_byte_or_start_of_multibyte(inst.address):
+                self.symbols[inst.address] = ('mem_%04x' % inst.address, '')
+
+        for address, inst in memory.iter_instructions():
+            if inst.address in self.symbols:
+                continue
+            if inst.addr_mode != AddressModes.BitDirectWithRelative:
+                continue
+            if memory.is_single_byte_or_start_of_multibyte(inst.bittest_address):
+                self.symbols[inst.bittest_address] = ('mem_%04x' % inst.bittest_address, '')
+
+        for address, inst in memory.iter_instructions():
+            if inst.address in self.symbols:
+                continue
+            if not inst.stores_immediate_word_in_ix_or_ep:
+                continue
+            if memory.is_single_byte_or_start_of_multibyte(inst.immediate):
+                self.symbols[inst.immediate] = ('mem_%04x' % inst.immediate, '')
+
+
 F2MC8L_COMMON_SYMBOLS = {
     0xffc0: ('callv_0_vect', 'callv #0'),
     0xffc2: ('callv_1_vect', 'callv #1'),
@@ -185,43 +233,3 @@ MB89670_SYMBOLS.update({
     0xfff8: ('irq1_vect', 'irq1 (external interrupt 2)'),
     0xfffa: ('irq0_vect', 'irq0 (external interrupt 1)'),
 })
-
-class SymbolTable(object):
-    def __init__(self, initial_symbols=None):
-        if initial_symbols is None:
-            initial_symbols = {}
-        self.symbols = initial_symbols.copy()
-
-    def generate(self, memory, start_address):
-        self.generate_code_symbols(memory, start_address)
-        self.generate_data_symbols(memory, start_address)
-
-    def generate_code_symbols(self, memory, start_address):
-        for address in range(start_address, len(memory)):
-            if memory.is_call_target(address):
-                if memory.is_instruction_start(address):
-                    self.symbols[address] = ('sub_%04x' % address, '')
-            elif memory.is_jump_target(address):
-                if memory.is_instruction_start(address):
-                    self.symbols[address] = ('lab_%04x' % address, '')
-
-    def generate_data_symbols(self, memory, start_address):
-        for address, inst in memory.iter_instructions():
-            if inst.addr_mode not in (AddressModes.Extended,
-                                      AddressModes.Direct,
-                                      AddressModes.DirectWithImmediateByte,
-                                      AddressModes.BitDirect):
-                continue
-            if inst.address in self.symbols:
-                continue
-            if memory.is_single_byte_or_start_of_multibyte(inst.address):
-                self.symbols[inst.address] = ('mem_%04x' % inst.address, '')
-
-        for address, inst in memory.iter_instructions():
-            if inst.addr_mode != AddressModes.BitDirectWithRelative:
-                continue
-            if inst.address in self.symbols:
-                continue
-            if memory.is_single_byte_or_start_of_multibyte(inst.bittest_address):
-                self.symbols[inst.bittest_address] = ('mem_%04x' % inst.bittest_address, '')
-
