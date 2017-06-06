@@ -19,7 +19,7 @@ def main():
     os.chdir(dirname)
     try:
         while True:
-            size = random.randint(0, 0x10000-0x100)
+            size = random.randint(0x100, 0x10000-0x100)
             data = os.urandom(size)
             with open('original.bin', 'wb') as f:
                 f.write(data)
