@@ -112,7 +112,7 @@ class Printer(object):
 
         # render instruction as a .byte sequence if asf2mc8 would optimize an
         # extended address into a direct one, breaking identical reassembly
-        optimizable = ((inst.addr_mode == AddressModes.Extended) and
+        ext_page_0 = ((inst.addr_mode == AddressModes.Extended) and
                       ((inst.address & 0xFF00) == 0) and
                       (inst.opcode not in (0x21, 0x31)))
 
@@ -120,12 +120,17 @@ class Printer(object):
         # to an address that does not have a symbol
         rel = (inst.addr_mode in (AddressModes.Relative,
                                   AddressModes.BitDirectWithRelative))
-        bad_branch = (rel and ((inst.address not in self.symbols) or
-                               (inst.address < self.start_address)))
+        branch_without_symbol = (rel and ((inst.address not in self.symbols) or
+                                    (inst.address < self.start_address)))
 
-        if optimizable or bad_branch:
+        if ext_page_0 or branch_without_symbol:
+            if ext_page_0:
+                note = "EXTENDED_ADDRESS_PAGE_0"
+            else: # bad_branch
+                note = "BRANCH_WITHOUT_SYMBOL"
+
             line = ('    .byte ' + ', '.join([ '0x%02x' % h for h in inst.all_bytes ])).ljust(28)
-            line += (';%04x  %s    XXX ' % (address, hexdump)).ljust(19)
+            line += (';%04x  %s    %s  ' % (address, hexdump, note)).ljust(19)
             line += disasm
         else:
             line = '    ' + disasm.ljust(24)
