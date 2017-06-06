@@ -98,8 +98,12 @@ class Printer(object):
         print(line)
 
     def print_code_line(self, address, inst):
-        if inst.stores_immediate_word_in_pointer or inst.stores_immediate_word_in_a:
+        if inst.stores_immediate_word_in_pointer:
             if inst.immediate in self.symbols:
+                name, comment = self.symbols[inst.immediate]
+                inst.disasm_template = inst.disasm_template.replace("IMW", name)
+        if inst.stores_immediate_word_in_a:
+            if inst.immediate in self.symbols and (inst.immediate >= self.start_address):
                 name, comment = self.symbols[inst.immediate]
                 inst.disasm_template = inst.disasm_template.replace("IMW", name)
 
