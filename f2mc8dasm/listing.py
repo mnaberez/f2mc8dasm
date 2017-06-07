@@ -52,7 +52,8 @@ class Printer(object):
             if inst.bittest_address in self.symbols:
                 used_symbols.add(inst.bittest_address)
             if inst.stores_immediate_word_in_pointer:
-                used_symbols.add(inst.immediate)
+                if inst.immediate in self.symbols:
+                    used_symbols.add(inst.immediate)
 
         for address, target in self.memory.iter_vectors():
             if target in self.symbols:
