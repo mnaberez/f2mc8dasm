@@ -56,64 +56,63 @@ def resolve_rel(pc, displacement):
 
 
 def disassemble_inst(rom, pc):
-    opcode = rom[pc]
+    opcode = Opcodes[rom[pc]]
     pc = (pc + 1) & 0xFFFF
-    disasm_template, addr_mode, flow_type = Opcodes[opcode]
 
-    instlen = InstructionLengths[addr_mode]
+    instlen = InstructionLengths[opcode.addr_mode]
     operands = bytearray()
     for i in range(instlen - 1):
         operands.append(rom[pc])
         pc = (pc + 1) & 0xFFFF
 
     inst = Instruction(
-        opcode=opcode,
+        disasm_template=opcode.disasm_template,
+        addr_mode=opcode.addr_mode,
+        flow_type=opcode.flow_type,
+        opcode=opcode.number,
         operands=operands,
-        disasm_template=disasm_template,
-        addr_mode=addr_mode,
-        flow_type=flow_type,
         )
 
-    if addr_mode == AddressModes.Illegal:
+    if inst.addr_mode == AddressModes.Illegal:
         pass
-    elif addr_mode == AddressModes.Inherent:
+    elif inst.addr_mode == AddressModes.Inherent:
         pass
-    elif addr_mode == AddressModes.ImmediateWord:
+    elif inst.addr_mode == AddressModes.ImmediateWord:
         inst.immediate = (operands[0] << 8) + operands[1]
-    elif addr_mode == AddressModes.ImmediateByte:
+    elif inst.addr_mode == AddressModes.ImmediateByte:
         inst.immediate = operands[0]
-    elif addr_mode == AddressModes.Extended:
+    elif inst.addr_mode == AddressModes.Extended:
         high_byte, low_byte = operands
         word = (high_byte << 8) + low_byte
         inst.address = word
-    elif addr_mode == AddressModes.Direct:
+    elif inst.addr_mode == AddressModes.Direct:
         inst.address = operands[0]
-    elif addr_mode == AddressModes.DirectWithImmediateByte:
+    elif inst.addr_mode == AddressModes.DirectWithImmediateByte:
         inst.address = operands[0]
         inst.immediate = operands[1]
-    elif addr_mode == AddressModes.Register:
-        inst.register = opcode & 0b111
-    elif addr_mode == AddressModes.RegisterWithImmediateByte:
-        inst.register = opcode & 0b111
+    elif inst.addr_mode == AddressModes.Register:
+        inst.register = opcode.number & 0b111
+    elif inst.addr_mode == AddressModes.RegisterWithImmediateByte:
+        inst.register = opcode.number & 0b111
         inst.immediate = operands[0]
-    elif addr_mode == AddressModes.Pointer:
+    elif inst.addr_mode == AddressModes.Pointer:
         pass
-    elif addr_mode == AddressModes.PointerWithImmediateByte:
+    elif inst.addr_mode == AddressModes.PointerWithImmediateByte:
         inst.immediate = operands[0]
-    elif addr_mode == AddressModes.Index:
+    elif inst.addr_mode == AddressModes.Index:
         inst.ixd_offset = operands[0]
-    elif addr_mode == AddressModes.IndexWithImmediateByte:
+    elif inst.addr_mode == AddressModes.IndexWithImmediateByte:
         inst.ixd_offset = operands[0]
         inst.immediate = operands[1]
-    elif addr_mode == AddressModes.Vector:
-        inst.callv = opcode & 0b111
-    elif addr_mode == AddressModes.BitDirect:
-        inst.bit = opcode & 0b111
+    elif inst.addr_mode == AddressModes.Vector:
+        inst.callv = opcode.number & 0b111
+    elif inst.addr_mode == AddressModes.BitDirect:
+        inst.bit = opcode.number & 0b111
         inst.address = operands[0]
-    elif addr_mode == AddressModes.Relative:
+    elif inst.addr_mode == AddressModes.Relative:
         inst.address = resolve_rel(pc, operands[0])
-    elif addr_mode == AddressModes.BitDirectWithRelative:
-        inst.bit = opcode & 0b111
+    elif inst.addr_mode == AddressModes.BitDirectWithRelative:
+        inst.bit = opcode.number & 0b111
         inst.bittest_address = operands[0]
         inst.address = resolve_rel(pc, operands[1])
     else:
