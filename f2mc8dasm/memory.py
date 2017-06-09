@@ -135,8 +135,17 @@ class Memory(object):
     def annotate_call_target(self, address):
         self.annotations[address].add(LocationAnnotations.CallTarget)
 
-    def annotate_branch_always(self, address):
-        self.annotations[address].add(LocationAnnotations.BranchAlways)
+    def annotate_branch_taken(self, address):
+        self.annotations[address].add(LocationAnnotations.BranchTaken)
+
+    def annotate_branch_not_taken(self, address):
+        self.annotations[address].add(LocationAnnotations.BranchNotTaken)
+
+    def annotate_branch_always_taken(self, address):
+        self.annotations[address].add(LocationAnnotations.BranchAlwaysTaken)
+
+    def annotate_branch_never_taken(self, address):
+        self.annotations[address].add(LocationAnnotations.BranchNeverTaken)
 
     def is_jump_target(self, address):
         return LocationAnnotations.JumpTarget in self.annotations[address]
@@ -144,9 +153,17 @@ class Memory(object):
     def is_call_target(self, address):
         return LocationAnnotations.CallTarget in self.annotations[address]
 
-    def is_branch_always(self, address):
-        return LocationAnnotations.BranchAlways in self.annotations[address]
+    def is_branch_taken(self, address):
+        return LocationAnnotations.BranchTaken in self.annotations[address]
 
+    def is_branch_not_taken(self, address):
+        return LocationAnnotations.BranchNotTaken in self.annotations[address]
+
+    def is_branch_always_taken(self, address):
+        return LocationAnnotations.BranchAlwaysTaken in self.annotations[address]
+
+    def is_branch_never_taken(self, address):
+        return LocationAnnotations.BranchNeverTaken in self.annotations[address]
 
 class LocationTypes(object):
     '''A memory location has exactly one type'''
@@ -164,7 +181,10 @@ class LocationAnnotations(object):
     '''A memory location can have zero or more annotations'''
     JumpTarget = 0
     CallTarget = 1
-    BranchAlways = 2
+    BranchTaken = 2
+    BranchNotTaken = 3
+    BranchAlwaysTaken = 4
+    BranchNeverTaken = 5
 
 
 def _slice_to_range(slc):

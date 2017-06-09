@@ -146,8 +146,10 @@ class Printer(object):
                 line += ' '
             line += ';%04x  %s' % (address, hexdump)
 
-        if self.memory.is_branch_always(address):
-            line = line.ljust(47) + "BRANCH_ALWAYS"
+        if self.memory.is_branch_always_taken(address):
+            line = line.ljust(47) + "BRANCH_ALWAYS_TAKEN"
+        if self.memory.is_branch_never_taken(address):
+            line = line.ljust(47) + "BRANCH_NEVER_TAKEN"
         print(line)
 
     def format_instruction(self, inst):
