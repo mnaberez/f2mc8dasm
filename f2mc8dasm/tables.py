@@ -16,7 +16,7 @@ class AddressModes(object):
     IndexWithImmediateByte    = 12      # 86 aa bb  mov @ix+0xaa, #0xbb
     BitDirect                 = 13      # a0 aa     clrb 0xaa:0
     BitDirectWithRelative     = 14      # b0 aa 05  bbc 0xaa:0, 0xe005
-    Relative                  = 15      # fd 05     beq $e005
+    Relative                  = 15      # fd 05     beq 0xe005
     Vector                    = 16      # e8        callv #0
 
 InstructionLengths = {

@@ -6,20 +6,26 @@ from f2mc8dasm.tables import (
 
 
 class Instruction(object):
-    disasm_template = '' # "cmp @ix+IXD, #IMB"
-    addr_mode = None     # addressing mode
-    flow_type = None     # type of instruction for flow tracing
-    opcode = None        # opcode byte
-    operands = ()        # operand bytes
-    address = None       # address (0-0xFF for direct, 0-0xFFFF for ext)
-    bittest_address = None # direct address for bit test instructions
-    immediate = None     # immediate value (byte or word)
-    ixd_offset = None    # IXD offset 0-0xFF
-    bit = None           # bit 0-7
-    callv = None         # callv 0-7
-    register = None      # register r0-r7
+    __slots__ = ('disasm_template', 'addr_mode', 'flow_type',
+                 'affected_flags', 'opcode', 'operands', 'address',
+                 'bittest_address', 'immediate', 'ixd_offset', 'bit',
+                 'callv', 'register',)
 
     def __init__(self, **kwargs):
+        self.disasm_template = '' # "cmp @ix+IXD, #IMB"
+        self.addr_mode = None     # addressing mode
+        self.flow_type = None     # type of instruction for flow tracing
+        self.affected_flags = ()  # tuple of flags affected
+        self.opcode = None        # opcode byte
+        self.operands = ()        # operand bytes
+        self.address = None       # address (dir=0-0xFF, ext=0-0xFFFF)
+        self.bittest_address = None # direct address for bit test instructions
+        self.immediate = None     # immediate value (byte or word)
+        self.ixd_offset = None    # IXD offset 0-0xFF
+        self.bit = None           # bit 0-7
+        self.callv = None         # callv 0-7
+        self.register = None      # register r0-r7
+
         for k, v in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
@@ -28,6 +34,28 @@ class Instruction(object):
 
     def __len__(self):
         return 1 + len(self.operands)
+
+    def __str__(self):
+        disasm = self.disasm_template
+        for attr, tpl, fmt in self._disasm_formats:
+            v = getattr(self, attr)
+            if v is not None:
+                disasm = disasm.replace(tpl, fmt % v)
+        return disasm
+
+    _disasm_formats = (
+        ('opcode',          'OPC', '0x%02x'),
+        ('bittest_address', 'DIR', '0x%02x'),
+        ('address',         'DIR', '0x%02x'),
+        ('address',         'EXT', '0x%04x'),
+        ('address',         'REL', '0x%04x'),
+        ('immediate',       'IMB', '0x%02x'),
+        ('immediate',       'IMW', '0x%04x'),
+        ('ixd_offset',      'IXD', '0x%02x'),
+        ('bit',             'BIT', '%d'),
+        ('callv',           'VEC', '%d'),
+        ('register',        'REG', '%d'),
+        )
 
     @property
     def all_bytes(self):
@@ -69,6 +97,7 @@ def disassemble_inst(rom, pc):
         disasm_template=opcode.disasm_template,
         addr_mode=opcode.addr_mode,
         flow_type=opcode.flow_type,
+        affected_flags=opcode.affected_flags,
         opcode=opcode.number,
         operands=operands,
         )
