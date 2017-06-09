@@ -135,11 +135,17 @@ class Memory(object):
     def annotate_call_target(self, address):
         self.annotations[address].add(LocationAnnotations.CallTarget)
 
+    def annotate_branch_always(self, address):
+        self.annotations[address].add(LocationAnnotations.BranchAlways)
+
     def is_jump_target(self, address):
         return LocationAnnotations.JumpTarget in self.annotations[address]
 
     def is_call_target(self, address):
         return LocationAnnotations.CallTarget in self.annotations[address]
+
+    def is_branch_always(self, address):
+        return LocationAnnotations.BranchAlways in self.annotations[address]
 
 
 class LocationTypes(object):
@@ -158,6 +164,7 @@ class LocationAnnotations(object):
     '''A memory location can have zero or more annotations'''
     JumpTarget = 0
     CallTarget = 1
+    BranchAlways = 2
 
 
 def _slice_to_range(slc):

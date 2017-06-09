@@ -145,6 +145,9 @@ class Printer(object):
             if not line.endswith(' '):
                 line += ' '
             line += ';%04x  %s' % (address, hexdump)
+
+        if self.memory.is_branch_always(address):
+            line = line.ljust(47) + "BRANCH_ALWAYS"
         print(line)
 
     def format_instruction(self, inst):
