@@ -150,6 +150,9 @@ class Printer(object):
             line = line.ljust(47) + "BRANCH_ALWAYS_TAKEN"
         if self.memory.is_branch_never_taken(address):
             line = line.ljust(47) + "BRANCH_NEVER_TAKEN"
+        if inst.addr_mode == AddressModes.Vector:
+            dest = self.format_ext_address(inst.address)
+            line = line.ljust(47) + "CALLV #%d = %s" % (inst.callv, dest)
         print(line)
 
     def format_instruction(self, inst):

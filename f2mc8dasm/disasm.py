@@ -83,14 +83,14 @@ def resolve_rel(pc, displacement):
     return (pc + displacement) & 0xFFFF
 
 
-def disassemble_inst(rom, pc):
-    opcode = Opcodes[rom[pc]]
+def disassemble_inst(memory, pc):
+    opcode = Opcodes[memory[pc]]
     pc = (pc + 1) & 0xFFFF
 
     instlen = InstructionLengths[opcode.addr_mode]
     operands = bytearray()
     for i in range(instlen - 1):
-        operands.append(rom[pc])
+        operands.append(memory[pc])
         pc = (pc + 1) & 0xFFFF
 
     inst = Instruction(
@@ -135,6 +135,13 @@ def disassemble_inst(rom, pc):
         inst.immediate = operands[1]
     elif inst.addr_mode == AddressModes.Vector:
         inst.callv = opcode.number & 0b111
+        vector = 0xffc0 + (inst.callv * 2)
+        try:
+            high = memory[vector] << 8
+            low = memory[(vector + 1) & 0xFFFF]
+            inst.address = high + low
+        except IndexError:
+            pass
     elif inst.addr_mode == AddressModes.BitDirect:
         inst.bit = opcode.number & 0b111
         inst.address = operands[0]
