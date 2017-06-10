@@ -58,9 +58,6 @@ class Tracer(object):
                 new_ps2.pc = inst.address
                 self.memory.annotate_call_target(inst.address)
                 self.enqueue_processor_state(new_ps2)
-
-            elif inst.flow_type == FlowTypes.IndirectSubroutineCall:
-                self.enqueue_processor_state(new_ps)
             elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
                 pass
             elif inst.flow_type == FlowTypes.SubroutineReturn:

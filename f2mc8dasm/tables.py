@@ -45,9 +45,8 @@ class FlowTypes(object):
     UnconditionalJump = 1           # jmp
     IndirectUnconditionalJump = 2   # jmp @a, xchw a,pc
     ConditionalJump = 3             # beq, bne, bhs, blo, ...
-    SubroutineCall = 4              # call
-    IndirectSubroutineCall = 5      # callv
-    SubroutineReturn = 6            # ret, reti
+    SubroutineCall = 4              # call, callv
+    SubroutineReturn = 5            # ret, reti
 
 
 class Flags(object):
@@ -1258,42 +1257,42 @@ Opcodes = (
     Opcode(number=0xe8,
            disasm_template="callv #VEC",
            addr_mode=AddressModes.Vector,
-           flow_type=FlowTypes.IndirectSubroutineCall,
+           flow_type=FlowTypes.SubroutineCall,
            affected_flags=()),
     Opcode(number=0xe9,
            disasm_template="callv #VEC",
            addr_mode=AddressModes.Vector,
-           flow_type=FlowTypes.IndirectSubroutineCall,
+           flow_type=FlowTypes.SubroutineCall,
            affected_flags=()),
     Opcode(number=0xea,
            disasm_template="callv #VEC",
            addr_mode=AddressModes.Vector,
-           flow_type=FlowTypes.IndirectSubroutineCall,
+           flow_type=FlowTypes.SubroutineCall,
            affected_flags=()),
     Opcode(number=0xeb,
            disasm_template="callv #VEC",
            addr_mode=AddressModes.Vector,
-           flow_type=FlowTypes.IndirectSubroutineCall,
+           flow_type=FlowTypes.SubroutineCall,
            affected_flags=()),
     Opcode(number=0xec,
            disasm_template="callv #VEC",
            addr_mode=AddressModes.Vector,
-           flow_type=FlowTypes.IndirectSubroutineCall,
+           flow_type=FlowTypes.SubroutineCall,
            affected_flags=()),
     Opcode(number=0xed,
            disasm_template="callv #VEC",
            addr_mode=AddressModes.Vector,
-           flow_type=FlowTypes.IndirectSubroutineCall,
+           flow_type=FlowTypes.SubroutineCall,
            affected_flags=()),
     Opcode(number=0xee,
            disasm_template="callv #VEC",
            addr_mode=AddressModes.Vector,
-           flow_type=FlowTypes.IndirectSubroutineCall,
+           flow_type=FlowTypes.SubroutineCall,
            affected_flags=()),
     Opcode(number=0xef,
            disasm_template="callv #VEC",
            addr_mode=AddressModes.Vector,
-           flow_type=FlowTypes.IndirectSubroutineCall,
+           flow_type=FlowTypes.SubroutineCall,
            affected_flags=()),
 
     # 0xf0
