@@ -26,13 +26,44 @@ def main():
         # reset
         0xfffe,
     ]
-
-    # XXX put this in a more sensible place
     def jump_table(start_address, length):
         address = start_address
         for i in range(length):
             vectors.append(address)
             address += 2
+    jump_table (0x81a8, 6)
+    jump_table (0xf139, 4)
+    jump_table (0xd7e1, 16)
+    jump_table (0xde79, 9)
+    jump_table (0xedd8, 4)
+    jump_table (0xee39, 7)
+    jump_table (0xee77, 6)
+    jump_table (0xf254, 4)
+    jump_table (0xd501, 16)
+    jump_table (0xd528, 16)
+    jump_table (0x8f44, 14)
+    jump_table (0x958a, 51)
+    jump_table (0x9a51, 33)
+    jump_table (0x9ee0, 11)
+    jump_table (0xa4a0, 11)
+    jump_table (0xac03, 17)
+    jump_table (0xae73, 8)
+    jump_table (0xb318, 17)
+    jump_table (0xb467, 7)
+    jump_table (0xb5a4, 7)
+    jump_table (0xbe62, 8)
+    jump_table (0xbe62, 6)
+    jump_table (0xc354, 11)
+    jump_table (0xc4c9, 10)
+    jump_table (0xc9ec, 6)
+    jump_table (0xca39, 6)
+    jump_table (0xcb16, 6)
+    jump_table (0xe223, 7)
+    jump_table (0xe3bd, 14)
+    jump_table (0xee20, 3)
+    jump_table (0xee5b, 6)
+    jump_table (0xf4b7, 6)
+    jump_table (0xfe00, 66)
 
     traceable_range = range(start_address, start_address + len(rom) + 1)
     tracer = Tracer(memory, entry_points, vectors, traceable_range)

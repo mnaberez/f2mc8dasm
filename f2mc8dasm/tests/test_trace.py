@@ -1,49 +1,52 @@
 import unittest
-from f2mc8dasm.trace import TraceQueue, SortedSet
+from operator import attrgetter
+from f2mc8dasm.trace import TraceQueue, SortedSet, ProcessorState
 
 class TraceQueueTests(unittest.TestCase):
     # __init__
 
     def test_ctor(self):
         queue = TraceQueue()
-        self.assertEqual(queue.traced_addresses, set())
-        self.assertEqual(queue.untraced_addresses, SortedSet())
+        self.assertEqual(queue.traced_processor_states, set())
+        self.assertEqual(queue.untraced_processor_states, SortedSet())
 
     # __len__
 
     def test_len_returns_untraced_length(self):
         queue = TraceQueue()
-        queue.push(0x0001)
-        queue.push(0x0002)
+        queue.push(ProcessorState(pc=0x0001))
+        queue.push(ProcessorState(pc=0x0002))
         self.assertEqual(len(queue), 2)
 
     # push
 
-    def test_push_adds_address_to_untraced(self):
+    def test_push_adds_state_to_untraced(self):
         queue = TraceQueue()
-        queue.push(0x0005)
-        self.assertEqual(queue.untraced_addresses, set([0x0005]))
-        queue.push(0x0006)
-        self.assertEqual(queue.untraced_addresses, set([0x0005, 0x0006]))
+        queue.push(ProcessorState(pc=0x0005))
+        self.assertEqual(queue.untraced_processor_states,
+            set([ProcessorState(pc=0x0005)]))
+        queue.push(ProcessorState(0x0006))
+        self.assertEqual(queue.untraced_processor_states,
+            set([ProcessorState(pc=0x0005), ProcessorState(pc=0x0006)]))
 
-    def test_push_doesnt_add_address_if_already_in_traced(self):
+    def test_push_doesnt_add_state_if_already_in_traced(self):
         queue = TraceQueue()
-        queue.push(0x0005)
+        queue.push(ProcessorState(pc=0x0005))
         self.assertEqual(len(queue), 1)
         queue.pop()
-        queue.push(0x0005)
+        queue.push(ProcessorState(pc=0x0005))
         self.assertEqual(len(queue), 0)
 
-    def test_push_doesnt_add_address_if_already_in_untraced(self):
+    def test_push_doesnt_add_state_if_already_in_untraced(self):
         queue = TraceQueue()
-        queue.push(0x0005)
+        queue.push(ProcessorState(pc=0x0005))
         self.assertEqual(len(queue), 1)
-        queue.push(0x0005)
+        queue.push(ProcessorState(pc=0x0005))
         self.assertEqual(len(queue), 1)
 
     # pop
 
-    def test_pop_raises_if_no_more_addresses(self):
+    def test_pop_raises_if_no_more_states(self):
         queue = TraceQueue()
         try:
             queue.pop()
@@ -51,23 +54,25 @@ class TraceQueueTests(unittest.TestCase):
         except KeyError as exc:
             self.assertEqual(exc.args[0], 'pop from empty trace queue')
 
-    def test_pop_removes_address_from_untraced_and_adds_to_traced(self):
+    def test_pop_removes_state_from_untraced_and_adds_to_traced(self):
         queue = TraceQueue()
-        queue.push(0x0005)
-        self.assertEqual(queue.untraced_addresses, set([0x0005]))
-        address = queue.pop()
-        self.assertEqual(address, 0x0005)
-        self.assertEqual(queue.untraced_addresses, set())
-        self.assertEqual(queue.traced_addresses, set([0x0005]))
+        queue.push(ProcessorState(pc=0x0005))
+        self.assertEqual(queue.untraced_processor_states,
+            set([ProcessorState(pc=0x0005)]))
+        state = queue.pop()
+        self.assertEqual(state.pc, 0x0005)
+        self.assertEqual(queue.untraced_processor_states, set())
+        self.assertEqual(queue.traced_processor_states,
+            set([ProcessorState(pc=0x0005)]))
 
-    def test_pop_returns_addresses_in_sorted_order(self):
+    def test_pop_returns_states_in_pc_sorted_order(self):
         queue = TraceQueue()
-        queue.push(0x0003)
-        queue.push(0x0001)
-        queue.push(0x0002)
-        self.assertEqual(queue.pop(), 0x0001)
-        self.assertEqual(queue.pop(), 0x0002)
-        self.assertEqual(queue.pop(), 0x0003)
+        queue.push(ProcessorState(pc=0x0003))
+        queue.push(ProcessorState(pc=0x0001))
+        queue.push(ProcessorState(pc=0x0002))
+        self.assertEqual(queue.pop().pc, 0x0001)
+        self.assertEqual(queue.pop().pc, 0x0002)
+        self.assertEqual(queue.pop().pc, 0x0003)
 
 
 class SortedSetTests(unittest.TestCase):
@@ -147,13 +152,23 @@ class SortedSetTests(unittest.TestCase):
 
     # pop
 
-    def test_pop(self):
+    def test_pop_no_sort_key(self):
         s = SortedSet([3,1,4])
         s.add(2)
         self.assertEqual(s.pop(), 1)
         self.assertEqual(s.pop(), 2)
         self.assertEqual(s.pop(), 3)
         self.assertEqual(s.pop(), 4)
+
+    def test_pop_sort_key(self):
+        items = [ProcessorState(pc=3), ProcessorState(pc=1),
+            ProcessorState(pc=4)]
+        s = SortedSet(items, key=attrgetter('pc'))
+        s.add(ProcessorState(pc=2))
+        self.assertEqual(s.pop().pc, 1)
+        self.assertEqual(s.pop().pc, 2)
+        self.assertEqual(s.pop().pc, 3)
+        self.assertEqual(s.pop().pc, 4)
 
     def test_pop_empty(self):
         s = SortedSet()
