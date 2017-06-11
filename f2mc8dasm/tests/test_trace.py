@@ -26,7 +26,7 @@ class TraceQueueTests(unittest.TestCase):
         self.assertEqual(queue.untraced_processor_states,
             set([ProcessorState(pc=0x0005)]))
         queue.push(ProcessorState(0x0006))
-        self.assertEqual(queue.untraced_processor_states,
+        self.assertEqual(set(queue.untraced_processor_states),
             set([ProcessorState(pc=0x0005), ProcessorState(pc=0x0006)]))
 
     def test_push_doesnt_add_state_if_already_in_traced(self):
