@@ -1,3 +1,4 @@
+import os
 from operator import attrgetter
 from f2mc8dasm.tables import FlowTypes, Flags
 
@@ -18,7 +19,8 @@ class Tracer(object):
             ps = self.queue.pop() # current processor state
             inst = disassemble_func(self.memory, ps.pc)
 
-            # self._log(inst, ps)
+            if "LOG" in os.environ: # XXX hack
+                self._log(inst, ps)
 
             inst_len = len(inst)
             if (ps.pc + inst_len) >= mem_len:
