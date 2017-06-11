@@ -77,12 +77,6 @@ class Instruction(object):
         return False
 
 
-def resolve_rel(pc, displacement):
-    if displacement & 0x80:
-        displacement = -((displacement ^ 0xFF) + 1)
-    return (pc + displacement) & 0xFFFF
-
-
 def disassemble_inst(memory, pc):
     opcode = Opcodes[memory[pc]]
     pc = (pc + 1) & 0xFFFF
@@ -135,23 +129,35 @@ def disassemble_inst(memory, pc):
         inst.immediate = operands[1]
     elif inst.addr_mode == AddressModes.Vector:
         inst.callv = opcode.number & 0b111
-        vector = 0xffc0 + (inst.callv * 2)
-        try:
-            high = memory[vector] << 8
-            low = memory[(vector + 1) & 0xFFFF]
-            inst.address = high + low
-        except IndexError:
-            pass
+        inst.address = _resolve_callv(inst.callv, memory)
     elif inst.addr_mode == AddressModes.BitDirect:
         inst.bit = opcode.number & 0b111
         inst.address = operands[0]
     elif inst.addr_mode == AddressModes.Relative:
-        inst.address = resolve_rel(pc, operands[0])
+        inst.address = _resolve_rel(pc, operands[0])
     elif inst.addr_mode == AddressModes.BitDirectWithRelative:
         inst.bit = opcode.number & 0b111
         inst.bittest_address = operands[0]
-        inst.address = resolve_rel(pc, operands[1])
+        inst.address = _resolve_rel(pc, operands[1])
     else:
-        raise NotImplementedError()
+        msg = "Unhandled addressing mode %r at 0x%04x" % (
+            inst.addr_mode, pc)
+        raise NotImplementedError(msg) # always a bug
 
     return inst
+
+
+def _resolve_rel(pc, displacement):
+    if displacement & 0x80:
+        displacement = -((displacement ^ 0xFF) + 1)
+    return (pc + displacement) & 0xFFFF
+
+
+def _resolve_callv(callv, memory):
+    vector = 0xffc0 + (callv * 2)
+    try:
+        high = memory[vector] << 8
+        low = memory[(vector + 1) & 0xFFFF]
+        return high + low
+    except IndexError:
+        return None
