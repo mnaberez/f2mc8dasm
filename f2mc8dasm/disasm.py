@@ -100,10 +100,10 @@ def disassemble_inst(memory, pc):
         pass
     elif inst.addr_mode == AddressModes.Inherent:
         pass
-    elif inst.addr_mode == AddressModes.ImmediateWord:
-        inst.immediate = (operands[0] << 8) + operands[1]
     elif inst.addr_mode == AddressModes.ImmediateByte:
         inst.immediate = operands[0]
+    elif inst.addr_mode == AddressModes.ImmediateWord:
+        inst.immediate = (operands[0] << 8) + operands[1]
     elif inst.addr_mode == AddressModes.Extended:
         high_byte, low_byte = operands
         word = (high_byte << 8) + low_byte
