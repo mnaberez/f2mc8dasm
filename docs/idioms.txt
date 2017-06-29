@@ -22,7 +22,7 @@ BC/BLO and BNC/BHS Aliases
 --------------------------
 
 It would be nice to select the alias based on the last instruction
-that affected the carry:
+that affected the carry flag:
 
 Example 1 (compare):
 
@@ -37,3 +37,21 @@ Example 2 (rotate):
     rolc a                  ;e90e  02       Rotate A left into carry
     bc lab_e91e             ;e90f  f9 0d    Branch if carry (good)
 
+BZ/BEQ and BNZ/BNE Aliases
+--------------------------
+
+It would be nice to select the alias based on the last instruction
+that affected the zero flag:
+
+Example 1 (compare):
+
+    cmp a, #0x05            ;f295  14 05    Compare A with 0x05
+    beq lab_f29c            ;f297  fd 03    Branch if equal (good)
+
+Example 2 (decrement):
+
+    decw a                  ;f26c  d0       Decrement word in A
+    bne lab_f26c            ;f26d  fc fd    Branch if not equal (unclear)
+
+    decw a                  ;f26c  d0       Decrement word in A
+    bnz lab_f26c            ;f26d  fc fd    Branch if not zero (good)
