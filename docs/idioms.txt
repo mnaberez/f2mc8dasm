@@ -17,3 +17,23 @@ table_0xe63f:
     .byte 0xE69E            ;Code at 0xE69E handles A = 2
     .byte 0xE6A1            ;Code at 0xE6A1 handles A = 3
     ... up to case for A = 0x0E
+
+BC/BLO and BNC/BHS Aliases
+--------------------------
+
+It would be nice to select the alias based on the last instruction
+that affected the carry:
+
+Example 1 (compare):
+
+    cmp a, #0x02            ;f1f9  14 02    Compare A with 0x02
+    blo lab_f213            ;f1fb  f9 16    Branch if lower (good)
+
+Example 2 (rotate):
+
+    rolc a                  ;e90e  02       Rotate A left into carry
+    blo lab_e91e            ;e90f  f9 0d    Branch if lower (unclear)
+
+    rolc a                  ;e90e  02       Rotate A left into carry
+    bc lab_e91e             ;e90f  f9 0d    Branch if carry (good)
+
