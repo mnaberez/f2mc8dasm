@@ -43,12 +43,17 @@ BZ/BEQ and BNZ/BNE Aliases
 It would be nice to select the alias based on the last instruction
 that affected the zero flag:
 
-Example 1 (compare):
+Example 1 (move):
+
+    mov a, 0xe5             ;f37f  05 e5    A = value at 0x00e5
+    bnz lab_f385            ;f381  fc 02    Branch if not zero (good)
+
+Example 2 (compare):
 
     cmp a, #0x05            ;f295  14 05    Compare A with 0x05
     beq lab_f29c            ;f297  fd 03    Branch if equal (good)
 
-Example 2 (decrement):
+Example 3 (decrement):
 
     decw a                  ;f26c  d0       Decrement word in A
     bne lab_f26c            ;f26d  fc fd    Branch if not equal (unclear)
