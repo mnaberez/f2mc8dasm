@@ -49,17 +49,16 @@ class Tracer(object):
             elif inst.flow_type == FlowTypes.ConditionalJump:
                 self.trace_conditional_jump(inst, ps, new_ps)
             elif inst.flow_type == FlowTypes.SubroutineCall:
-                # enqueue the next instruction after call
-                # XXX we have to drop the processor state here because we don't
-                # know what the subroutine will do at this time.
-                new_ps = ProcessorState(pc=new_ps.pc)
-                self.enqueue_processor_state(new_ps)
+                # enqueue the next instruction after call returns
+                # XXX the processor flags are dropped here because we don't
+                # know how the subroutine would have affected them.
+                new_ps2 = ProcessorState(pc=new_ps.pc)
+                self.enqueue_processor_state(new_ps2)
 
                 # enqueue the subroutine called
-                new_ps2 = new_ps.copy()
-                new_ps2.pc = inst.address
+                new_ps.pc = inst.address
                 self.memory.annotate_call_target(inst.address)
-                self.enqueue_processor_state(new_ps2)
+                self.enqueue_processor_state(new_ps)
             elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
                 pass
             elif inst.flow_type == FlowTypes.SubroutineReturn:
@@ -77,22 +76,22 @@ class Tracer(object):
         print("TRACE " + str(ps).ljust(24) + str(inst))
 
     def _update_flags(self, inst, ps):
+        if Flags.C in inst.affected_flags:
+            ps.c = Unknown
         if Flags.N in inst.affected_flags:
             ps.n = Unknown
         if Flags.Z in inst.affected_flags:
             ps.z = Unknown
-        if Flags.C in inst.affected_flags:
-            ps.c = Unknown
 
     def trace_continue(self, inst, ps, new_ps):
         if inst.opcode == 0x04: # MOV A, #IMM
             return self._trace_continue_0x04_mov(inst, ps, new_ps)
         if inst.opcode == 0xe4: # MOV A, #IMW
             return self._trace_continue_0xe4_movw(inst, ps, new_ps)
-        if inst.opcode == 0x91: # SETC
-            return self._trace_continue_0x91_setc(inst, ps, new_ps)
         if inst.opcode == 0x81: # CLRC
             return self._trace_continue_0x81_clrc(inst, ps, new_ps)
+        if inst.opcode == 0x91: # SETC
+            return self._trace_continue_0x91_setc(inst, ps, new_ps)
         return self._trace_continue_other(inst, ps, new_ps)
 
     def _trace_continue_0x04_mov(self, inst, ps, new_ps):
@@ -122,11 +121,69 @@ class Tracer(object):
         self.enqueue_processor_state(new_ps)
 
     def trace_conditional_jump(self, inst, ps, new_ps):
-        if inst.opcode == 0xfd: # BEQ
-            return self._trace_conditional_jump_0xfd_beq(inst, ps, new_ps)
+        if inst.opcode == 0xf8: # BNC/BHS
+            return self._trace_conditional_jump_0xf8_bnc(inst, ps, new_ps)
+        if inst.opcode == 0xf9: # BC/BLO
+            return self._trace_conditional_jump_0xf9_bc(inst, ps, new_ps)
         if inst.opcode == 0xfc: # BNE
             return self._trace_conditional_jump_0xfc_bne(inst, ps, new_ps)
+        if inst.opcode == 0xfd: # BEQ
+            return self._trace_conditional_jump_0xfd_beq(inst, ps, new_ps)
         return self._trace_conditional_jump_other(inst, ps, new_ps)
+
+    def _trace_conditional_jump_0xf8_bnc(self, inst, ps, new_ps):
+        if ps.c is Unknown:
+            # don't take the branch
+            self.memory.annotate_branch_not_taken(ps.pc)
+            new_ps.c = 1
+            self.enqueue_processor_state(new_ps)
+
+            # take the branch
+            self.memory.annotate_branch_taken(ps.pc)
+            new_ps = new_ps.copy()
+            new_ps.c = 0
+            new_ps.pc = inst.address
+            self.enqueue_processor_state(new_ps)
+            self.memory.annotate_jump_target(inst.address)
+
+        elif ps.c == 0:
+            # take the branch
+            self.memory.annotate_branch_taken(ps.pc)
+            new_ps.pc = inst.address
+            self.enqueue_processor_state(new_ps)
+            self.memory.annotate_jump_target(inst.address)
+
+        elif ps.c == 1:
+            # don't take the branch
+            self.memory.annotate_branch_not_taken(ps.pc)
+            self.enqueue_processor_state(new_ps)
+
+    def _trace_conditional_jump_0xf9_bc(self, inst, ps, new_ps):
+        if ps.c is Unknown:
+            # don't take the branch
+            self.memory.annotate_branch_not_taken(ps.pc)
+            new_ps.c = 0
+            self.enqueue_processor_state(new_ps)
+
+            # take the branch
+            self.memory.annotate_branch_taken(ps.pc)
+            new_ps = new_ps.copy()
+            new_ps.c = 1
+            new_ps.pc = inst.address
+            self.enqueue_processor_state(new_ps)
+            self.memory.annotate_jump_target(inst.address)
+
+        elif ps.c == 0:
+            # don't take the branch
+            self.memory.annotate_branch_not_taken(ps.pc)
+            self.enqueue_processor_state(new_ps)
+
+        elif ps.c == 1:
+            # take the branch
+            self.memory.annotate_branch_taken(ps.pc)
+            new_ps.pc = inst.address
+            self.enqueue_processor_state(new_ps)
+            self.memory.annotate_jump_target(inst.address)
 
     def _trace_conditional_jump_0xfd_beq(self, inst, ps, new_ps):
         if ps.z is Unknown:
@@ -304,34 +361,30 @@ Unknown = object()
 
 
 class ProcessorState(object):
-    __slots__ = ('pc', 'n', 'z', 'v', 'c', 'ret_pc')
+    __slots__ = ('pc', 'c', 'n', 'z')
 
-    def __init__(self, pc=Unknown, n=Unknown, z=Unknown, v=Unknown, c=Unknown, ret_pc=Unknown):
+    def __init__(self, pc=Unknown, n=Unknown, z=Unknown, c=Unknown):
         self.pc = pc    # program counter
+        self.c = c      # c flag
         self.n = n      # n flag
         self.z = z      # z flag
-        self.v = v      # v flag
-        self.c = c      # c flag
-        self.ret_pc = ret_pc # XXX hack, should emulate the stack instead
 
     def __repr__(self):
         return "<ProcessorState %s>" % str(self)
 
     def __str__(self):
         pc = "    " if self.pc is Unknown else "%04x" % self.pc
+        c = " " if self.c is Unknown else "%d" % self.c
         n = " " if self.n is Unknown else "%d" % self.n
         z = " " if self.z is Unknown else "%d" % self.z
-        v = " " if self.v is Unknown else "%d" % self.v
-        c = " " if self.c is Unknown else "%d" % self.c
-        return "pc=%s n=%s z=%s v=%s c=%s" % (pc, n, z, v, c)
+        return "pc=%s c=%s n=%s z=%s" % (pc, c, n, z)
 
     def __eq__(self, other):
-        return ((self.pc, self.n, self.z, self.v, self.c) ==
-                (other.pc, other.n, other.z, other.v, other.c))
+        return ((self.pc, self.c, self.n, self.z) ==
+                (other.pc, other.c, other.n, other.z))
 
     def __hash__(self):
-        return hash((self.pc, self.n, self.z, self.v, self.c))
+        return hash((self.pc, self.c, self.n, self.z))
 
     def copy(self):
-        return ProcessorState(pc=self.pc, n=self.n,
-                                z=self.z, v=self.v, c=self.c)
+        return ProcessorState(pc=self.pc, c=self.c, n=self.n, z=self.z)
