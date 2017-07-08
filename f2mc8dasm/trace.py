@@ -125,6 +125,10 @@ class Tracer(object):
             return self._trace_conditional_jump_0xf8_bnc(inst, ps, new_ps)
         if inst.opcode == 0xf9: # BC/BLO
             return self._trace_conditional_jump_0xf9_bc(inst, ps, new_ps)
+        if inst.opcode == 0xfa: # BP
+            return self._trace_conditional_jump_0xfa_bp(inst, ps, new_ps)
+        if inst.opcode == 0xfb: # BN
+            return self._trace_conditional_jump_0xfb_bn(inst, ps, new_ps)
         if inst.opcode == 0xfc: # BNE
             return self._trace_conditional_jump_0xfc_bne(inst, ps, new_ps)
         if inst.opcode == 0xfd: # BEQ
@@ -157,6 +161,60 @@ class Tracer(object):
             # don't take the branch
             self.memory.annotate_branch_not_taken(ps.pc)
             self.enqueue_processor_state(new_ps)
+
+    def _trace_conditional_jump_0xfa_bp(self, inst, ps, new_ps):
+        if ps.n is Unknown:
+            # don't take the branch
+            self.memory.annotate_branch_not_taken(ps.pc)
+            new_ps.n = 1
+            self.enqueue_processor_state(new_ps)
+
+            # take the branch
+            self.memory.annotate_branch_taken(ps.pc)
+            new_ps = new_ps.copy()
+            new_ps.n = 0
+            new_ps.pc = inst.address
+            self.enqueue_processor_state(new_ps)
+            self.memory.annotate_jump_target(inst.address)
+
+        elif ps.n == 1:
+            # don't take the branch
+            self.memory.annotate_branch_not_taken(ps.pc)
+            self.enqueue_processor_state(new_ps)
+
+        elif ps.n == 0:
+            # take the branch
+            self.memory.annotate_branch_taken(ps.pc)
+            new_ps.pc = inst.address
+            self.enqueue_processor_state(new_ps)
+            self.memory.annotate_jump_target(inst.address)
+
+    def _trace_conditional_jump_0xfb_bn(self, inst, ps, new_ps):
+        if ps.n is Unknown:
+            # don't take the branch
+            self.memory.annotate_branch_not_taken(ps.pc)
+            new_ps.n = 0
+            self.enqueue_processor_state(new_ps)
+
+            # take the branch
+            self.memory.annotate_branch_taken(ps.pc)
+            new_ps = new_ps.copy()
+            new_ps.n = 1
+            new_ps.pc = inst.address
+            self.enqueue_processor_state(new_ps)
+            self.memory.annotate_jump_target(inst.address)
+
+        elif ps.n == 0:
+            # don't take the branch
+            self.memory.annotate_branch_not_taken(ps.pc)
+            self.enqueue_processor_state(new_ps)
+
+        elif ps.n == 1:
+            # take the branch
+            self.memory.annotate_branch_taken(ps.pc)
+            new_ps.pc = inst.address
+            self.enqueue_processor_state(new_ps)
+            self.memory.annotate_jump_target(inst.address)
 
     def _trace_conditional_jump_0xf9_bc(self, inst, ps, new_ps):
         if ps.c is Unknown:

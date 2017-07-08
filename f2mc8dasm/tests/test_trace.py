@@ -342,3 +342,71 @@ class TracerTests(unittest.TestCase):
             )
         tracer.trace(disassemble_inst)
         self.assertTrue(memory.is_branch_always_taken(0xf9e7))
+
+    def test_branch_always_taken_mov_bp(self):
+        rom = bytearray(0x10000)
+        rom[0xf9e5] = 0x04   # mov a, #0x42  ;f9e5  04 42
+        rom[0xf9e6] = 0x42
+        rom[0xf9e7] = 0xfa   # bp 0xf9eb     ;f9e7  fa 02  branch always
+        rom[0xf9e8] = 0x02
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf9e5],
+            vectors=[],
+            traceable_range=range(0xf9e5, 0xf9e8+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_branch_always_taken(0xf9e7))
+
+    def test_branch_always_taken_mov_bn(self):
+        rom = bytearray(0x10000)
+        rom[0xf9e5] = 0x04   # mov a, #0x82  ;f9e5  04 82
+        rom[0xf9e6] = 0x82
+        rom[0xf9e7] = 0xfb   # bn 0xf9eb     ;f9e7  fb 02  branch always
+        rom[0xf9e8] = 0x02
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf9e5],
+            vectors=[],
+            traceable_range=range(0xf9e5, 0xf9e8+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_branch_always_taken(0xf9e7))
+
+    def test_branch_always_taken_bp_bn(self):
+        rom = bytearray(0x10000)
+        rom[0xf9e3] = 0xfa   # bp 0xf9e9    ;f9e3  fa 04
+        rom[0xf9e4] = 0x04
+        rom[0xf9e5] = 0xa8   # setb pdr0:0  ;f9e5  a8 00
+        rom[0xf9e6] = 0x00
+        rom[0xf9e7] = 0xfb   # bn 0xf9eb    ;f9e7  fb 02  branch always
+        rom[0xf9e8] = 0x02
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf9e3],
+            vectors=[],
+            traceable_range=range(0xf9e3, 0xf9e8+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_branch_always_taken(0xf9e7))
+
+    def test_branch_always_taken_bn_np(self):
+        rom = bytearray(0x10000)
+        rom[0xf9e3] = 0xfb   # bn 0xf9e9    ;f9e3  fb 04
+        rom[0xf9e4] = 0x04
+        rom[0xf9e5] = 0xa8   # setb pdr0:0  ;f9e5  a8 00
+        rom[0xf9e6] = 0x00
+        rom[0xf9e7] = 0xfa   # bn 0xf9eb    ;f9e7  fa 02  branch always
+        rom[0xf9e8] = 0x02
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf9e3],
+            vectors=[],
+            traceable_range=range(0xf9e3, 0xf9e8+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_branch_always_taken(0xf9e7))
