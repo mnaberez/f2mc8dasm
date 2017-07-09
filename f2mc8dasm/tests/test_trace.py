@@ -195,6 +195,9 @@ class TracerTests(unittest.TestCase):
             traceable_range=range(0x8ac1, 0x8ac4+1)
             )
         tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0x8ac1))
+        self.assertTrue(memory.is_instruction_start(0x8ac3))
+        self.assertTrue(memory.is_unknown(0x8ac5)) # tracing stopped
         self.assertTrue(memory.is_branch_always_taken(0x8ac3))
 
     def test_branch_always_taken_bz_bnz(self):
@@ -211,6 +214,9 @@ class TracerTests(unittest.TestCase):
             traceable_range=range(0x8ac1, 0x8ac4+1)
             )
         tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0x8ac1))
+        self.assertTrue(memory.is_instruction_start(0x8ac3))
+        self.assertTrue(memory.is_unknown(0x8ac5)) # tracing stopped
         self.assertTrue(memory.is_branch_always_taken(0x8ac3))
 
     def test_branch_always_taken_mov_bz(self):
@@ -227,6 +233,9 @@ class TracerTests(unittest.TestCase):
             traceable_range=range(0xf90c, 0xf90f+1)
             )
         tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf90c))
+        self.assertTrue(memory.is_instruction_start(0xf90e))
+        self.assertTrue(memory.is_unknown(0xf910)) # tracing stopped
         self.assertTrue(memory.is_branch_always_taken(0xf90e))
 
     def test_branch_always_taken_mov_bnz(self):
@@ -243,6 +252,9 @@ class TracerTests(unittest.TestCase):
             traceable_range=range(0xf90c, 0xf90f+1)
             )
         tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf90c))
+        self.assertTrue(memory.is_instruction_start(0xf90e))
+        self.assertTrue(memory.is_unknown(0xf910)) # tracing stopped
         self.assertTrue(memory.is_branch_always_taken(0xf90e))
 
     def test_branch_always_taken_movw_bz(self):
@@ -260,7 +272,10 @@ class TracerTests(unittest.TestCase):
             traceable_range=range(0xf90b, 0xf90e+1)
             )
         tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf90b))
+        self.assertTrue(memory.is_instruction_start(0xf90e))
         self.assertTrue(memory.is_branch_always_taken(0xf90e))
+        self.assertTrue(memory.is_unknown(0xf910)) # tracing stopped
 
     def test_branch_always_taken_movw_bnz(self):
         rom = bytearray(0x10000)
@@ -277,71 +292,84 @@ class TracerTests(unittest.TestCase):
             traceable_range=range(0xf90b, 0xf90f+1)
             )
         tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf90b))
+        self.assertTrue(memory.is_instruction_start(0xf90e))
+        self.assertTrue(memory.is_unknown(0xf910)) # tracing stopped
         self.assertTrue(memory.is_branch_always_taken(0xf90e))
 
     def test_branch_always_taken_clrc_bnc(self):
         rom = bytearray(0x10000)
         rom[0xf9e6] = 0x81   # clrc         ;f9e6  81
         rom[0xf9e7] = 0xf8   # bnc 0xf9eb   ;f9e7  f8 02  branch always
+        rom[0xf9e8] = 0x02
         memory = Memory(rom)
         tracer = Tracer(
             memory=memory,
             entry_points=[0xf9e6],
             vectors=[],
-            traceable_range=range(0xf9e3, 0xf9e7+1)
+            traceable_range=range(0xf9e3, 0xf9e8+1)
             )
         tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf9e6))
+        self.assertTrue(memory.is_instruction_start(0xf9e7))
         self.assertTrue(memory.is_branch_always_taken(0xf9e7))
+        self.assertTrue(memory.is_unknown(0xf9e9)) # tracing stopped
 
     def test_branch_always_taken_setc_bc(self):
         rom = bytearray(0x10000)
         rom[0xf9e6] = 0x91   # setc         ;f9e6  91
         rom[0xf9e7] = 0xf9   # bc 0xf9eb    ;f9e3  f9 02  branch always
+        rom[0xf9e8] = 0x02
         memory = Memory(rom)
         tracer = Tracer(
             memory=memory,
             entry_points=[0xf9e6],
             vectors=[],
-            traceable_range=range(0xf9e3, 0xf9e7+1)
+            traceable_range=range(0xf9e3, 0xf9e8+1)
             )
         tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf9e6))
+        self.assertTrue(memory.is_instruction_start(0xf9e7))
+        self.assertTrue(memory.is_unknown(0xf9e9)) # tracing stopped
         self.assertTrue(memory.is_branch_always_taken(0xf9e7))
 
     def test_branch_always_taken_bc_bnc(self):
         rom = bytearray(0x10000)
         rom[0xf9e3] = 0xf9   # bc 0xf9e9    ;f9e3  f9 04
         rom[0xf9e4] = 0x04
-        rom[0xf9e5] = 0xa8   # setb pdr0:0  ;f9e5  a8 00
-        rom[0xf9e6] = 0x00
-        rom[0xf9e7] = 0xf8   # bnc 0xf9eb   ;f9e7  f8 02  branch always
-        rom[0xf9e8] = 0x02
+        rom[0xf9e5] = 0xf8   # bnc 0xf9eb   ;f9e7  f8 02  branch always
+        rom[0xf9e6] = 0x02
         memory = Memory(rom)
         tracer = Tracer(
             memory=memory,
             entry_points=[0xf9e3],
             vectors=[],
-            traceable_range=range(0xf9e3, 0xf9e8+1)
+            traceable_range=range(0xf9e3, 0xf9e6+1)
             )
         tracer.trace(disassemble_inst)
-        self.assertTrue(memory.is_branch_always_taken(0xf9e7))
+        self.assertTrue(memory.is_instruction_start(0xf9e3))
+        self.assertTrue(memory.is_instruction_start(0xf9e5))
+        self.assertTrue(memory.is_unknown(0xf9e7)) # tracing stopped
+        self.assertTrue(memory.is_branch_always_taken(0xf9e5))
 
     def test_branch_always_taken_bnc_bc(self):
         rom = bytearray(0x10000)
         rom[0xf9e3] = 0xf8   # bnc 0xf9e9  ;f9e3  f8 04
         rom[0xf9e4] = 0x04
-        rom[0xf9e5] = 0xa8   # setb pdr0:0 ;f9e5  a8 00
-        rom[0xf9e6] = 0x00
-        rom[0xf9e7] = 0xf9   # bc 0xf9eb   ;f9e7  f9 02  branch always
-        rom[0xf9e8] = 0x02
+        rom[0xf9e5] = 0xf9   # bc 0xf9eb   ;f9e7  f9 02  branch always
+        rom[0xf9e6] = 0x02
         memory = Memory(rom)
         tracer = Tracer(
             memory=memory,
             entry_points=[0xf9e3],
             vectors=[],
-            traceable_range=range(0xf9e3, 0xf9e8+1)
+            traceable_range=range(0xf9e3, 0xf9e6+1)
             )
         tracer.trace(disassemble_inst)
-        self.assertTrue(memory.is_branch_always_taken(0xf9e7))
+        self.assertTrue(memory.is_instruction_start(0xf9e3))
+        self.assertTrue(memory.is_instruction_start(0xf9e5))
+        self.assertTrue(memory.is_unknown(0xf9e97)) # tracing stopped
+        self.assertTrue(memory.is_branch_always_taken(0xf9e5))
 
     def test_branch_always_taken_mov_bp(self):
         rom = bytearray(0x10000)
@@ -357,6 +385,9 @@ class TracerTests(unittest.TestCase):
             traceable_range=range(0xf9e5, 0xf9e8+1)
             )
         tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf9e5))
+        self.assertTrue(memory.is_instruction_start(0xf9e7))
+        self.assertTrue(memory.is_unknown(0xf9e9)) # tracing stopped
         self.assertTrue(memory.is_branch_always_taken(0xf9e7))
 
     def test_branch_always_taken_mov_bn(self):
@@ -373,40 +404,275 @@ class TracerTests(unittest.TestCase):
             traceable_range=range(0xf9e5, 0xf9e8+1)
             )
         tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf9e5))
+        self.assertTrue(memory.is_instruction_start(0xf9e7))
+        self.assertTrue(memory.is_unknown(0xf9e9)) # tracing stopped
         self.assertTrue(memory.is_branch_always_taken(0xf9e7))
 
     def test_branch_always_taken_bp_bn(self):
         rom = bytearray(0x10000)
         rom[0xf9e3] = 0xfa   # bp 0xf9e9    ;f9e3  fa 04
         rom[0xf9e4] = 0x04
-        rom[0xf9e5] = 0xa8   # setb pdr0:0  ;f9e5  a8 00
-        rom[0xf9e6] = 0x00
-        rom[0xf9e7] = 0xfb   # bn 0xf9eb    ;f9e7  fb 02  branch always
-        rom[0xf9e8] = 0x02
+        rom[0xf9e5] = 0xfb   # bn 0xf9e9    ;f9e7  fb 02  branch always
+        rom[0xf9e6] = 0x02
         memory = Memory(rom)
         tracer = Tracer(
             memory=memory,
             entry_points=[0xf9e3],
             vectors=[],
-            traceable_range=range(0xf9e3, 0xf9e8+1)
+            traceable_range=range(0xf9e3, 0xf9e6+1)
             )
         tracer.trace(disassemble_inst)
-        self.assertTrue(memory.is_branch_always_taken(0xf9e7))
+        self.assertTrue(memory.is_instruction_start(0xf9e3))
+        self.assertTrue(memory.is_instruction_start(0xf9e5))
+        self.assertTrue(memory.is_unknown(0xf9e7)) # tracing stopped
+        self.assertTrue(memory.is_branch_always_taken(0xf9e5))
 
-    def test_branch_always_taken_bn_np(self):
+    def test_branch_always_taken_bn_bp(self):
         rom = bytearray(0x10000)
         rom[0xf9e3] = 0xfb   # bn 0xf9e9    ;f9e3  fb 04
         rom[0xf9e4] = 0x04
-        rom[0xf9e5] = 0xa8   # setb pdr0:0  ;f9e5  a8 00
-        rom[0xf9e6] = 0x00
-        rom[0xf9e7] = 0xfa   # bn 0xf9eb    ;f9e7  fa 02  branch always
-        rom[0xf9e8] = 0x02
+        rom[0xf9e5] = 0xfa   # bp 0xf9e9    ;f9e7  fa 02  branch always
+        rom[0xf9e6] = 0x02
         memory = Memory(rom)
         tracer = Tracer(
             memory=memory,
             entry_points=[0xf9e3],
             vectors=[],
+            traceable_range=range(0xf9e3, 0xf9e6+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf9e3))
+        self.assertTrue(memory.is_instruction_start(0xf9e5))
+        self.assertTrue(memory.is_unknown(0xf9e7)) # tracing stopped
+        self.assertTrue(memory.is_branch_always_taken(0xf9e5))
+
+    # branch never taken
+
+    def test_branch_never_taken_bnz_bnz(self):
+        rom = bytearray(0x10000)
+        rom[0x8ac1] = 0xfc   # bnz 0x8ac5     ;8ac1  fc 02
+        rom[0x8ac2] = 0x02
+        rom[0x8ac3] = 0xfc   # bnz 0x8ac7     ;8ac3  fc 02  branch never
+        rom[0x8ac4] = 0x02
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0x8ac1],
+            vectors=[],
+            traceable_range=range(0x8ac1, 0x8ac4+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0x8ac1))
+        self.assertTrue(memory.is_instruction_start(0x8ac3))
+        self.assertTrue(memory.is_unknown(0x8ac5)) # tracing stopped
+        self.assertTrue(memory.is_branch_never_taken(0x8ac3))
+
+    def test_branch_never_taken_bz_bz(self):
+        rom = bytearray(0x10000)
+        rom[0x8ac1] = 0xfd   # bz 0x8ac5     ;8ac1  fd 02
+        rom[0x8ac2] = 0x02
+        rom[0x8ac3] = 0xfd   # bz 0x8ac7     ;8ac3  fd 02  branch never
+        rom[0x8ac4] = 0x02
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0x8ac1],
+            vectors=[],
+            traceable_range=range(0x8ac1, 0x8ac4+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0x8ac1))
+        self.assertTrue(memory.is_instruction_start(0x8ac3))
+        self.assertTrue(memory.is_unknown(0x8ac5)) # tracing stopped
+        self.assertTrue(memory.is_branch_never_taken(0x8ac3))
+
+    def test_branch_never_taken_mov_bz(self):
+        rom = bytearray(0x10000)
+        rom[0xf90c] = 0x04   # mov a, #0x01  ;f90c  04 01
+        rom[0xf90d] = 0x01
+        rom[0xf90e] = 0xfd   # bz 0xf8f4     ;f90e  fd e4  branch never
+        rom[0xf90f] = 0xe4
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf90c],
+            vectors=[],
+            traceable_range=range(0xf90c, 0xf90f+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf90c))
+        self.assertTrue(memory.is_instruction_start(0xf90e))
+        self.assertTrue(memory.is_unknown(0xf910)) # tracing stopped
+        self.assertTrue(memory.is_branch_never_taken(0xf90e))
+
+    def test_branch_never_taken_mov_bnz(self):
+        rom = bytearray(0x10000)
+        rom[0xf90c] = 0x04   # mov a, #0x00  ;f90c  04 00
+        rom[0xf90d] = 0x00
+        rom[0xf90e] = 0xfc   # bnz 0xf8f4    ;f90e  fc e4  branch never
+        rom[0xf90f] = 0xe4
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf90c],
+            vectors=[],
+            traceable_range=range(0xf90c, 0xf90f+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf90c))
+        self.assertTrue(memory.is_instruction_start(0xf90e))
+        self.assertTrue(memory.is_unknown(0xf910)) # tracing stopped
+        self.assertTrue(memory.is_branch_never_taken(0xf90e))
+
+    def test_branch_never_taken_movw_bz(self):
+        rom = bytearray(0x10000)
+        rom[0xf90b] = 0xe4   # movw a, #0x0001  ;f90b  e4 00 01
+        rom[0xf90c] = 0x00
+        rom[0xf90d] = 0x01
+        rom[0xf90e] = 0xfd   # bz 0xf8f4        ;f90e  fd e4  branch never
+        rom[0xf90f] = 0xe4
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf90b],
+            vectors=[],
+            traceable_range=range(0xf90b, 0xf90e+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf90b))
+        self.assertTrue(memory.is_instruction_start(0xf90e))
+        self.assertTrue(memory.is_branch_never_taken(0xf90e))
+        self.assertTrue(memory.is_unknown(0xf910)) # tracing stopped
+
+    def test_branch_never_taken_movw_bnz(self):
+        rom = bytearray(0x10000)
+        rom[0xf90b] = 0xe4   # movw a, #0x0000  ;f90b  e4 00 00
+        rom[0xf90c] = 0x00
+        rom[0xf90d] = 0x00
+        rom[0xf90e] = 0xfc   # bnz 0xf8f4       ;f90e  fc e4  branch always
+        rom[0xf90f] = 0xe4
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf90b],
+            vectors=[],
+            traceable_range=range(0xf90b, 0xf90f+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf90b))
+        self.assertTrue(memory.is_instruction_start(0xf90e))
+        self.assertTrue(memory.is_unknown(0xf910)) # tracing stopped
+        self.assertTrue(memory.is_branch_never_taken(0xf90e))
+
+    def test_branch_never_taken_setc_bnc(self):
+        rom = bytearray(0x10000)
+        rom[0xf9e6] = 0x91   # setc         ;f9e6  91
+        rom[0xf9e7] = 0xf8   # bnc 0xf9eb   ;f9e7  f8 02  branch never
+        rom[0xf9e8] = 0x02
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf9e6],
+            vectors=[],
             traceable_range=range(0xf9e3, 0xf9e8+1)
             )
         tracer.trace(disassemble_inst)
-        self.assertTrue(memory.is_branch_always_taken(0xf9e7))
+        self.assertTrue(memory.is_instruction_start(0xf9e6))
+        self.assertTrue(memory.is_instruction_start(0xf9e7))
+        self.assertTrue(memory.is_branch_never_taken(0xf9e7))
+        self.assertTrue(memory.is_unknown(0xf9e9)) # tracing stopped
+
+    def test_branch_never_taken_clrc_bc(self):
+        rom = bytearray(0x10000)
+        rom[0xf9e6] = 0x81   # clrc         ;f9e6  81
+        rom[0xf9e7] = 0xf9   # bc 0xf9eb    ;f9e7  f9 02  branch never
+        rom[0xf9e8] = 0x02
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf9e6],
+            vectors=[],
+            traceable_range=range(0xf9e3, 0xf9e8+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf9e6))
+        self.assertTrue(memory.is_instruction_start(0xf9e7))
+        self.assertTrue(memory.is_branch_never_taken(0xf9e7))
+        self.assertTrue(memory.is_unknown(0xf9e9)) # tracing stopped
+
+    def test_branch_never_taken_bnc_bnc(self):
+        rom = bytearray(0x10000)
+        rom[0xf9e3] = 0xf8   # bnc 0xf9e9  ;f9e3  f8 04
+        rom[0xf9e4] = 0x04
+        rom[0xf9e5] = 0xf8   # bnc 0xf9eb  ;f9e7  f8 02  branch never
+        rom[0xf9e6] = 0x02
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf9e3],
+            vectors=[],
+            traceable_range=range(0xf9e3, 0xf9e6+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf9e3))
+        self.assertTrue(memory.is_instruction_start(0xf9e5))
+        self.assertTrue(memory.is_unknown(0xf9e97)) # tracing stopped
+        self.assertTrue(memory.is_branch_never_taken(0xf9e5))
+
+    def test_branch_never_taken_bc_bc(self):
+        rom = bytearray(0x10000)
+        rom[0xf9e3] = 0xf9   # bc 0xf9e9    ;f9e3  f9 04
+        rom[0xf9e4] = 0x04
+        rom[0xf9e5] = 0xf9   # bc 0xf9eb    ;f9e7  f9 02  branch never
+        rom[0xf9e6] = 0x02
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf9e3],
+            vectors=[],
+            traceable_range=range(0xf9e3, 0xf9e6+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf9e3))
+        self.assertTrue(memory.is_instruction_start(0xf9e5))
+        self.assertTrue(memory.is_unknown(0xf9e7)) # tracing stopped
+        self.assertTrue(memory.is_branch_never_taken(0xf9e5))
+
+    def test_branch_never_taken_bp_bp(self):
+        rom = bytearray(0x10000)
+        rom[0xf9e3] = 0xfa   # bp 0xf9e9    ;f9e3  fa 04
+        rom[0xf9e4] = 0x04
+        rom[0xf9e5] = 0xfa   # bp 0xf9e9    ;f9e7  fa 02  branch never
+        rom[0xf9e6] = 0x02
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf9e3],
+            vectors=[],
+            traceable_range=range(0xf9e3, 0xf9e6+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf9e3))
+        self.assertTrue(memory.is_instruction_start(0xf9e5))
+        self.assertTrue(memory.is_unknown(0xf9e7)) # tracing stopped
+        self.assertTrue(memory.is_branch_never_taken(0xf9e5))
+
+    def test_branch_never_taken_bn_bn(self):
+        rom = bytearray(0x10000)
+        rom[0xf9e3] = 0xfb   # bn 0xf9e9    ;f9e3  fb 04
+        rom[0xf9e4] = 0x04
+        rom[0xf9e5] = 0xfb   # bn 0xf9e9    ;f9e7  fb 02  branch never
+        rom[0xf9e6] = 0x02
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xf9e3],
+            vectors=[],
+            traceable_range=range(0xf9e3, 0xf9e6+1)
+            )
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xf9e3))
+        self.assertTrue(memory.is_instruction_start(0xf9e5))
+        self.assertTrue(memory.is_unknown(0xf9e7)) # tracing stopped
+        self.assertTrue(memory.is_branch_never_taken(0xf9e5))
