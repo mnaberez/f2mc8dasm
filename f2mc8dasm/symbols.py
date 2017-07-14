@@ -245,7 +245,7 @@ MB89670_SYMBOLS.update({
     0xffe8: ('irq9_vect', 'irq9 (8/16-bit updown counter)'),
     0xffea: ('irq8_vect', 'irq8 (uart)'),
     0xffec: ('irq7_vect', 'irq7 (8-bit serial i/o)'),
-    0xffee: ('irq6_vect', 'irq6 (8-bit pwm timer #3 (#4, #5, #6)'),
+    0xffee: ('irq6_vect', 'irq6 (8-bit pwm timer #3 (#4, #5, #6))'),
     0xfff0: ('irq5_vect', 'irq5 (2ch 8-bit pwm timer)'),
     0xfff2: ('irq4_vect', 'irq4 (unused)'),
     0xfff4: ('irq3_vect', 'irq3 (8/16 bit timer #1, #2)'),
