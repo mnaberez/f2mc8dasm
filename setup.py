@@ -1,17 +1,36 @@
 __version__ = '1.0.0.dev0'
 
+import sys
 from setuptools import setup, find_packages
 
-DESC = ""
+if sys.version_info[:2] < (3, 4):
+    raise RuntimeError('f2mc8dasm requires Python 3.4 or later')
 
-CLASSIFIERS = []
+DESC = "Fujitsu F2MC-8 disassembler"
+
+CLASSIFIERS = [
+    'Development Status :: 3 - Alpha',
+    'Environment :: Console',
+    'Intended Audience :: Developers',
+    'Natural Language :: English',
+    'Operating System :: POSIX',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Assembly',
+    'Topic :: Software Development :: Disassemblers',
+    'Topic :: Software Development :: Embedded Systems',
+    'Topic :: System :: Hardware'
+]
 
 setup(
     name='f2mc8dasm',
     version=__version__,
     license='License :: OSI Approved :: BSD License',
     url='',
-    description='',
+    description=DESC,
     long_description=DESC,
     classifiers=CLASSIFIERS,
     author="Mike Naberezny",
