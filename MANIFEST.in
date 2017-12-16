@@ -1,2 +1,4 @@
+include CHANGES.txt
 include LICENSE.txt
+include README.md
 include f2mc8dasm/scripts/*.py
