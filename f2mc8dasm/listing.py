@@ -2,10 +2,10 @@ import struct
 from f2mc8dasm.tables import AddressModes
 
 class Printer(object):
-    def __init__(self, memory, start_address, symbols):
+    def __init__(self, memory, start_address, symbol_table):
         self.memory = memory
         self.start_address = start_address
-        self.symbols = symbols
+        self.symbol_table = symbol_table
         self.last_line_type = None
 
     def print_listing(self):
@@ -47,21 +47,21 @@ class Printer(object):
     def print_symbols(self):
         used_symbols = set()
         for address, inst in self.memory.iter_instructions():
-            if inst.address in self.symbols:
+            if inst.address in self.symbol_table.symbols:
                 used_symbols.add(inst.address)
-            if inst.bittest_address in self.symbols:
+            if inst.bittest_address in self.symbol_table.symbols:
                 used_symbols.add(inst.bittest_address)
             if inst.stores_immediate_word_in_pointer:
-                if inst.immediate in self.symbols:
+                if inst.immediate in self.symbol_table.symbols:
                     used_symbols.add(inst.immediate)
 
         for address, target in self.memory.iter_vectors():
-            if target in self.symbols:
+            if target in self.symbol_table.symbols:
                 used_symbols.add(target)
 
         for address in sorted(used_symbols):
             if address < self.start_address:
-                name, comment = self.symbols[address]
+                name, comment = self.symbol_table.symbols[address]
                 line = ("    %s = 0x%02x" % (name, address)).ljust(28)
                 if comment:
                     line += ";%s" % comment
@@ -72,12 +72,12 @@ class Printer(object):
         typ = self.memory.types[address]
         if self.last_line_type is not None:
             if typ != self.last_line_type:
-                if address not in self.symbols:
+                if address not in self.symbol_table.symbols:
                     print('')
         self.last_line_type = typ
 
     def print_label(self, address):
-        if address in self.symbols:
+        if address in self.symbol_table.symbols:
             print("\n%s:" % self.format_ext_address(address))
 
     def print_data_line(self, address):
@@ -90,7 +90,7 @@ class Printer(object):
         target = self.format_ext_address(target)
         line = ('    .word %s' % target).ljust(28)
         line += ';%04x  %02x %02x       VECTOR' % (address, self.memory[address], self.memory[address+1])
-        name, comment = self.symbols.get(address, ('',''))
+        name, comment = self.symbol_table.symbols.get(address, ('',''))
         if comment:
             line += ' ' + comment
         print(line)
@@ -107,12 +107,12 @@ class Printer(object):
 
     def print_instruction_line(self, address, inst):
         if inst.stores_immediate_word_in_pointer:
-            if inst.immediate in self.symbols:
-                name, comment = self.symbols[inst.immediate]
+            if inst.immediate in self.symbol_table.symbols:
+                name, comment = self.symbol_table.symbols[inst.immediate]
                 inst.disasm_template = inst.disasm_template.replace("IMW", name)
         if inst.stores_immediate_word_in_a:
-            if inst.immediate in self.symbols and (inst.immediate >= self.start_address):
-                name, comment = self.symbols[inst.immediate]
+            if inst.immediate in self.symbol_table.symbols and (inst.immediate >= self.start_address):
+                name, comment = self.symbol_table.symbols[inst.immediate]
                 inst.disasm_template = inst.disasm_template.replace("IMW", name)
 
         disasm = self.format_instruction(inst)
@@ -128,7 +128,7 @@ class Printer(object):
         # to an address that does not have a symbol
         rel = (inst.addr_mode in (AddressModes.Relative,
                                   AddressModes.BitDirectWithRelative))
-        branch_without_symbol = (rel and ((inst.address not in self.symbols) or
+        branch_without_symbol = (rel and ((inst.address not in self.symbol_table.symbols) or
                                     (inst.address < self.start_address)))
 
         if ext_page_0 or branch_without_symbol:
@@ -182,13 +182,13 @@ class Printer(object):
         return disasm
 
     def format_ext_address(self, address):
-        if address in self.symbols:
-            name, comment = self.symbols[address]
+        if address in self.symbol_table.symbols:
+            name, comment = self.symbol_table.symbols[address]
             return name
         return '0x%04x' % address
 
     def format_dir_address(self, address):
-        if address in self.symbols:
-            name, comment = self.symbols[address]
+        if address in self.symbol_table.symbols:
+            name, comment = self.symbol_table.symbols[address]
             return name
         return '0x%02x' % address

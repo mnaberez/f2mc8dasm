@@ -36,7 +36,7 @@ def main():
 
     printer = Printer(memory,
                       start_address,
-                      symbol_table.symbols, # xxx should pass symbol_table
+                      symbol_table,
                       )
     printer.print_listing()
 
