@@ -39,35 +39,11 @@ class Tracer(object):
             new_ps = ps.copy()  # new state after this instruction
             new_ps.pc = (ps.pc + inst_len) & 0xFFFF
 
-            if inst.flow_type == FlowTypes.Continue:
-                self.trace_continue(inst, ps, new_ps)
-            elif inst.flow_type == FlowTypes.UnconditionalJump:
-                self.memory.annotate_jump_target(inst.address)
-                self._update_flags(inst, new_ps)
-                new_ps.pc = inst.address
-                self.enqueue_processor_state(new_ps)
-            elif inst.flow_type == FlowTypes.ConditionalJump:
-                self.trace_conditional_jump(inst, ps, new_ps)
-            elif inst.flow_type == FlowTypes.SubroutineCall:
-                # enqueue the next instruction after call returns
-                # XXX the processor flags are dropped here because we don't
-                # know how the subroutine would have affected them.
-                new_ps2 = ProcessorState(pc=new_ps.pc)
-                self.enqueue_processor_state(new_ps2)
-
-                # enqueue the subroutine called
-                new_ps.pc = inst.address
-                self.memory.annotate_call_target(inst.address)
-                self.enqueue_processor_state(new_ps)
-            elif inst.flow_type == FlowTypes.IndirectUnconditionalJump:
-                pass
-            elif inst.flow_type == FlowTypes.SubroutineReturn:
-                # XXX should have a way to update flags on return
-                pass
-            else:
-                msg = "Unhandled flow type %r at 0x%04x" % (
-                    self.memory.types[ps.pc], inst.flow_type)
-                raise NotImplementedError(msg) # always a bug
+            # trace this instruction
+            handler = self._instruction_handlers.get(inst.opcode)
+            if handler is None:
+                handler = self._generic_handlers[inst.flow_type]
+            handler(self, inst, ps, new_ps)
 
         self.mark_unknown_memory_as_data()
         self.annotate_branches()
@@ -83,59 +59,36 @@ class Tracer(object):
         if Flags.Z in inst.affected_flags:
             ps.z = Unknown
 
-    def trace_continue(self, inst, ps, new_ps):
-        if inst.opcode == 0x04: # MOV A, #IMM
-            return self._trace_continue_0x04_mov(inst, ps, new_ps)
-        if inst.opcode == 0xe4: # MOV A, #IMW
-            return self._trace_continue_0xe4_movw(inst, ps, new_ps)
-        if inst.opcode == 0x81: # CLRC
-            return self._trace_continue_0x81_clrc(inst, ps, new_ps)
-        if inst.opcode == 0x91: # SETC
-            return self._trace_continue_0x91_setc(inst, ps, new_ps)
-        return self._trace_continue_other(inst, ps, new_ps)
+    # Handlers for specific instructions
 
-    def _trace_continue_0x04_mov(self, inst, ps, new_ps):
+    def _trace_inst_0x04_mov(self, inst, ps, new_ps):
+        # flowtype = continue
         a = inst.immediate
         new_ps.n = int((a & 0x80) == 0x80)
         new_ps.z = int(a == 0)
         # TODO A register
         self.enqueue_processor_state(new_ps)
 
-    def _trace_continue_0xe4_movw(self, inst, ps, new_ps):
+    def _trace_inst_0xe4_movw(self, inst, ps, new_ps):
+        # flowtype = continue
         a = inst.immediate
         new_ps.n = int((a & 0x8000) == 0x8000)
         new_ps.z = int(a == 0)
         # TODO A register
         self.enqueue_processor_state(new_ps)
 
-    def _trace_continue_0x91_setc(self, inst, ps, new_ps):
+    def _trace_inst_0x91_setc(self, inst, ps, new_ps):
+        # flowtype = continue
         new_ps.c = 1
         self.enqueue_processor_state(new_ps)
 
-    def _trace_continue_0x81_clrc(self, inst, ps, new_ps):
+    def _trace_inst_0x81_clrc(self, inst, ps, new_ps):
+        # flowtype = continue
         new_ps.c = 0
         self.enqueue_processor_state(new_ps)
 
-    def _trace_continue_other(self, inst, ps, new_ps):
-        self._update_flags(inst, new_ps)
-        self.enqueue_processor_state(new_ps)
-
-    def trace_conditional_jump(self, inst, ps, new_ps):
-        if inst.opcode == 0xf8: # BNC/BHS
-            return self._trace_conditional_jump_0xf8_bnc(inst, ps, new_ps)
-        if inst.opcode == 0xf9: # BC/BLO
-            return self._trace_conditional_jump_0xf9_bc(inst, ps, new_ps)
-        if inst.opcode == 0xfa: # BP
-            return self._trace_conditional_jump_0xfa_bp(inst, ps, new_ps)
-        if inst.opcode == 0xfb: # BN
-            return self._trace_conditional_jump_0xfb_bn(inst, ps, new_ps)
-        if inst.opcode == 0xfc: # BNE
-            return self._trace_conditional_jump_0xfc_bne(inst, ps, new_ps)
-        if inst.opcode == 0xfd: # BEQ
-            return self._trace_conditional_jump_0xfd_beq(inst, ps, new_ps)
-        return self._trace_conditional_jump_other(inst, ps, new_ps)
-
-    def _trace_conditional_jump_0xf8_bnc(self, inst, ps, new_ps):
+    def _trace_inst_0xf8_bnc(self, inst, ps, new_ps):
+        # flowtype = conditional jump
         if ps.c is Unknown:
             # don't take the branch
             self.memory.annotate_branch_not_taken(ps.pc)
@@ -162,7 +115,8 @@ class Tracer(object):
             self.memory.annotate_branch_not_taken(ps.pc)
             self.enqueue_processor_state(new_ps)
 
-    def _trace_conditional_jump_0xfa_bp(self, inst, ps, new_ps):
+    def _trace_inst_0xfa_bp(self, inst, ps, new_ps):
+        # flowtype = conditional jump
         if ps.n is Unknown:
             # don't take the branch
             self.memory.annotate_branch_not_taken(ps.pc)
@@ -189,7 +143,8 @@ class Tracer(object):
             self.enqueue_processor_state(new_ps)
             self.memory.annotate_jump_target(inst.address)
 
-    def _trace_conditional_jump_0xfb_bn(self, inst, ps, new_ps):
+    def _trace_inst_0xfb_bn(self, inst, ps, new_ps):
+        # flowtype = conditional jump
         if ps.n is Unknown:
             # don't take the branch
             self.memory.annotate_branch_not_taken(ps.pc)
@@ -216,7 +171,8 @@ class Tracer(object):
             self.enqueue_processor_state(new_ps)
             self.memory.annotate_jump_target(inst.address)
 
-    def _trace_conditional_jump_0xf9_bc(self, inst, ps, new_ps):
+    def _trace_inst_0xf9_bc(self, inst, ps, new_ps):
+        # flowtype = conditional jump
         if ps.c is Unknown:
             # don't take the branch
             self.memory.annotate_branch_not_taken(ps.pc)
@@ -243,7 +199,8 @@ class Tracer(object):
             self.enqueue_processor_state(new_ps)
             self.memory.annotate_jump_target(inst.address)
 
-    def _trace_conditional_jump_0xfd_beq(self, inst, ps, new_ps):
+    def _trace_inst_0xfd_beq(self, inst, ps, new_ps):
+        # flowtype = conditional jump
         if ps.z is Unknown:
             # don't take the branch
             self.memory.annotate_branch_not_taken(ps.pc)
@@ -270,7 +227,8 @@ class Tracer(object):
             self.enqueue_processor_state(new_ps)
             self.memory.annotate_jump_target(inst.address)
 
-    def _trace_conditional_jump_0xfc_bne(self, inst, ps, new_ps):
+    def _trace_inst_0xfc_bne(self, inst, ps, new_ps):
+        # flowtype = conditional jump
         if ps.z is Unknown:
             # don't take the branch
             self.memory.annotate_branch_not_taken(ps.pc)
@@ -297,7 +255,26 @@ class Tracer(object):
             self.memory.annotate_branch_not_taken(ps.pc)
             self.enqueue_processor_state(new_ps)
 
-    def _trace_conditional_jump_other(self, inst, ps, new_ps):
+    _instruction_handlers = {
+        0x04: _trace_inst_0x04_mov,
+        0xe4: _trace_inst_0xe4_movw,
+        0x91: _trace_inst_0x91_setc,
+        0x81: _trace_inst_0x81_clrc,
+        0xf8: _trace_inst_0xf8_bnc,
+        0xf9: _trace_inst_0xf9_bc,
+        0xfa: _trace_inst_0xfa_bp,
+        0xfb: _trace_inst_0xfb_bn,
+        0xfc: _trace_inst_0xfc_bne,
+        0xfd: _trace_inst_0xfd_beq,
+    }
+
+    # Fallback handlers for when an instruction handler is not available
+
+    def _trace_generic_continue(self, inst, ps, new_ps):
+        self._update_flags(inst, new_ps)
+        self.enqueue_processor_state(new_ps)
+
+    def _trace_generic_conditional_jump(self, inst, ps, new_ps):
         self._update_flags(inst, new_ps)
 
         # don't take the branch
@@ -310,6 +287,39 @@ class Tracer(object):
         self.memory.annotate_jump_target(inst.address)
 
         return False
+
+    def _trace_generic_unconditional_jump(self, inst, ps, new_ps):
+        self.memory.annotate_jump_target(inst.address)
+        self._update_flags(inst, new_ps)
+        new_ps.pc = inst.address
+        self.enqueue_processor_state(new_ps)
+
+    def _trace_generic_subroutine_call(self, inst, ps, new_ps):
+        # enqueue the next instruction after call returns
+        # XXX the processor flags are dropped here because we don't
+        # know how the subroutine would have affected them.
+        new_ps2 = ProcessorState(pc=new_ps.pc)
+        self.enqueue_processor_state(new_ps2)
+
+        # enqueue the subroutine called
+        new_ps.pc = inst.address
+        self.memory.annotate_call_target(inst.address)
+        self.enqueue_processor_state(new_ps)
+
+    def _trace_generic_indirect_unconditional_jump(self, inst, ps, new_ps):
+        pass
+
+    def _trace_generic_subroutine_return(self, inst, ps, new_ps):
+        pass
+
+    _generic_handlers = {
+        FlowTypes.Continue:          _trace_generic_continue,
+        FlowTypes.UnconditionalJump: _trace_generic_unconditional_jump,
+        FlowTypes.ConditionalJump:   _trace_generic_conditional_jump,
+        FlowTypes.SubroutineCall:    _trace_generic_subroutine_call,
+        FlowTypes.IndirectUnconditionalJump: _trace_generic_indirect_unconditional_jump,
+        FlowTypes.SubroutineReturn:  _trace_generic_subroutine_return,
+    }
 
     def enqueue_processor_state(self, ps):
         if ps.pc in self.traceable_range:
