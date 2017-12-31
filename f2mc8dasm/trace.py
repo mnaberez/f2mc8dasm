@@ -51,14 +51,6 @@ class Tracer(object):
     def _log(self, inst, ps):
         print("TRACE " + str(ps).ljust(24) + str(inst))
 
-    def _update_flags(self, inst, ps):
-        if Flags.C in inst.affected_flags:
-            ps.c = Unknown
-        if Flags.N in inst.affected_flags:
-            ps.n = Unknown
-        if Flags.Z in inst.affected_flags:
-            ps.z = Unknown
-
     # Handlers for specific instructions
 
     def _trace_inst_0x04_mov(self, inst, ps, new_ps):
@@ -289,8 +281,8 @@ class Tracer(object):
         return False
 
     def _trace_generic_unconditional_jump(self, inst, ps, new_ps):
-        self.memory.annotate_jump_target(inst.address)
         self._update_flags(inst, new_ps)
+        self.memory.annotate_jump_target(inst.address)
         new_ps.pc = inst.address
         self.enqueue_processor_state(new_ps)
 
@@ -311,6 +303,14 @@ class Tracer(object):
 
     def _trace_generic_subroutine_return(self, inst, ps, new_ps):
         pass
+
+    def _update_flags(self, inst, ps):
+        if Flags.C in inst.affected_flags:
+            ps.c = Unknown
+        if Flags.N in inst.affected_flags:
+            ps.n = Unknown
+        if Flags.Z in inst.affected_flags:
+            ps.z = Unknown
 
     _generic_handlers = {
         FlowTypes.Continue:          _trace_generic_continue,
