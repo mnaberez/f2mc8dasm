@@ -179,6 +179,48 @@ class SortedSetTests(unittest.TestCase):
 
 class TracerTests(unittest.TestCase):
 
+    # code flows into vector area
+
+    def test_next_instruction_starts_at_vector_area(self):
+        rom = bytearray(0x10000)
+        rom[0xffbf] = 0x00  # nop at 0xffbf
+                            # next instruction would be at 0xffc0
+                            # but vectors start at 0xffc0
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xffbf],
+            vectors=[0xffc0],
+            traceable_range=range(0x8000, 0xffff)
+            )
+        self.assertFalse(memory.is_instruction_start(0xffbf))
+        self.assertTrue(memory.is_vector_start(0xffc0))
+        tracer.trace(disassemble_inst)
+        self.assertTrue(memory.is_instruction_start(0xffbf))
+        self.assertTrue(memory.is_vector_start(0xffc0))
+        self.assertFalse(memory.is_instruction_start(0xffc0))
+
+    def test_multibyte_instruction_flows_into_vector_area(self):
+        rom = bytearray(0x10000)
+        rom[0xffbf] = 0x85  # mov 0xaa, #0xbb   ;ffbf  85 aa bb
+        rom[0xffc0] = 0xaa  # instruction would occupy 0xffbf-0xffc1
+        rom[0xffc1] = 0xbb  # but vectors start at 0xffc0
+        memory = Memory(rom)
+        tracer = Tracer(
+            memory=memory,
+            entry_points=[0xffbf],
+            vectors=[0xffc0],
+            traceable_range=range(0x8000, 0xffff)
+            )
+        self.assertFalse(memory.is_instruction_start(0xffbf))
+        self.assertTrue(memory.is_vector_start(0xffc0))
+        tracer.trace(disassemble_inst)
+        self.assertFalse(memory.is_instruction_start(0xffbf))
+        self.assertFalse(memory.is_instruction_continuation(0xffc0))
+        self.assertFalse(memory.is_instruction_continuation(0xffc1))
+        self.assertTrue(memory.is_vector_start(0xffc0))
+        self.assertTrue(memory.is_vector_continuation(0xffc1))
+
     # branch always taken
 
     def test_branch_always_taken_bnz_bz(self):
