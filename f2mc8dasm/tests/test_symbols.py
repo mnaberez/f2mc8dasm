@@ -29,6 +29,18 @@ class SymbolTableTests(unittest.TestCase):
         st.generate(mem, 0)
         self.assertEqual(st.symbols, {0xf000: ('sub_f000', '')})
 
+    def test_generate_doesnt_make_symbol_for_jump_to_mid_instruction(self):
+        mem = memory.Memory(bytearray(0x10000))
+        inst = disasm.Instruction(opcode=0x31, operands=(0xaa, 0xbb,))
+        self.assertTrue(len(inst), 3)
+        mem.set_instruction(0xF000, inst)
+        self.assertTrue(mem.is_instruction_start(0xF000))
+        self.assertTrue(mem.is_instruction_continuation(0xF001))
+        mem.annotate_jump_target(0xF001)
+        st = symbols.SymbolTable()
+        st.generate(mem, 0)
+        self.assertEqual(st.symbols, {})
+
 
 class SymbolDictionariesTests(unittest.TestCase):
     def test_addresses_are_in_range(self):
