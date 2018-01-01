@@ -7,9 +7,17 @@ class Tracer(object):
         self.memory = memory
         self.traceable_range = traceable_range
         self.queue = TraceQueue()
+
         for address in entry_points:
+            if address not in traceable_range:
+                msg = "Address 0x%04X outside of traceable range"
+                raise ValueError(msg % address)
             self.enqueue_address(address)
+
         for address in vectors:
+            if address not in traceable_range:
+                msg = "Vector address 0x%04X outside of traceable range"
+                raise ValueError(msg % address)
             self.enqueue_vector(address)
 
     def trace(self, disassemble_func):
@@ -331,17 +339,19 @@ class Tracer(object):
                 self.queue.push(ps)
 
     def enqueue_address(self, address):
-        ps = ProcessorState(pc=address)
-        self.enqueue_processor_state(ps)
+        if address in self.traceable_range:
+            ps = ProcessorState(pc=address)
+            self.enqueue_processor_state(ps)
 
     def enqueue_vector(self, address):
-        self.memory.set_vector(address)
-        target = self.memory.read_word(address)
-        # TODO 0xFFFF can be replaced with a check for is unknown or is
-        # start of instruction, since 0xFFFF is the reset vector
-        if (target != 0xFFFF) and (target in self.traceable_range):
-            self.memory.annotate_jump_target(target)
-            self.enqueue_address(target)
+        if address in self.traceable_range:
+            self.memory.set_vector(address)
+            target = self.memory.read_word(address)
+            # TODO 0xFFFF can be replaced with a check for is unknown or is
+            # start of instruction, since 0xFFFF is the reset vector
+            if (target != 0xFFFF) and (target in self.traceable_range):
+                self.memory.annotate_jump_target(target)
+                self.enqueue_address(target)
 
     def mark_unknown_memory_as_data(self):
         for address in self.traceable_range:

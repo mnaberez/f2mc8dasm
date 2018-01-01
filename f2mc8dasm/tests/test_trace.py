@@ -179,47 +179,63 @@ class SortedSetTests(unittest.TestCase):
 
 class TracerTests(unittest.TestCase):
 
-    # code flows into vector area
+    # constructor
 
-    def test_next_instruction_starts_at_vector_area(self):
+    def test_ctor_raises_if_entry_point_outside_of_traceable_range(self):
         rom = bytearray(0x10000)
-        rom[0xffbf] = 0x00  # nop at 0xffbf
-                            # next instruction would be at 0xffc0
-                            # but vectors start at 0xffc0
+        memory = Memory(rom)
+        try:
+            Tracer(
+                memory=memory,
+                entry_points=[0xa000],
+                vectors=[],
+                traceable_range=range(0x8000, 0x9000)
+                )
+            self.fail()
+        except ValueError as exc:
+            msg = "Address 0xA000 outside of traceable range"
+            self.assertEqual(exc.args[0], msg)
+
+    def test_ctor_raises_if_vector_outside_of_traceable_range(self):
+        rom = bytearray(0x10000)
+        memory = Memory(rom)
+        try:
+            Tracer(
+                memory=memory,
+                entry_points=[],
+                vectors=[0xa000],
+                traceable_range=range(0x8000, 0x9000)
+                )
+            self.fail()
+        except ValueError as exc:
+            msg = "Vector address 0xA000 outside of traceable range"
+            self.assertEqual(exc.args[0], msg)
+
+    # enqueuing
+
+    def test_enqueue_address_ignores_address_outside_of_traceable_range(self):
+        rom = bytearray(0x10000)
         memory = Memory(rom)
         tracer = Tracer(
             memory=memory,
-            entry_points=[0xffbf],
-            vectors=[0xffc0],
-            traceable_range=range(0x8000, 0xffff)
+            entry_points=[],
+            vectors=[],
+            traceable_range=range(0x8000, 0x9000)
             )
-        self.assertFalse(memory.is_instruction_start(0xffbf))
-        self.assertTrue(memory.is_vector_start(0xffc0))
-        tracer.trace(disassemble_inst)
-        self.assertTrue(memory.is_instruction_start(0xffbf))
-        self.assertTrue(memory.is_vector_start(0xffc0))
-        self.assertFalse(memory.is_instruction_start(0xffc0))
+        tracer.enqueue_address(0xa000)
+        self.assertEqual(len(tracer.queue), 0)
 
-    def test_multibyte_instruction_flows_into_vector_area(self):
+    def test_enqueue_vector_ignores_vector_outside_of_traceable_range(self):
         rom = bytearray(0x10000)
-        rom[0xffbf] = 0x85  # mov 0xaa, #0xbb   ;ffbf  85 aa bb
-        rom[0xffc0] = 0xaa  # instruction would occupy 0xffbf-0xffc1
-        rom[0xffc1] = 0xbb  # but vectors start at 0xffc0
         memory = Memory(rom)
         tracer = Tracer(
             memory=memory,
-            entry_points=[0xffbf],
-            vectors=[0xffc0],
-            traceable_range=range(0x8000, 0xffff)
+            entry_points=[],
+            vectors=[],
+            traceable_range=range(0x8000, 0x9000)
             )
-        self.assertFalse(memory.is_instruction_start(0xffbf))
-        self.assertTrue(memory.is_vector_start(0xffc0))
-        tracer.trace(disassemble_inst)
-        self.assertFalse(memory.is_instruction_start(0xffbf))
-        self.assertFalse(memory.is_instruction_continuation(0xffc0))
-        self.assertFalse(memory.is_instruction_continuation(0xffc1))
-        self.assertTrue(memory.is_vector_start(0xffc0))
-        self.assertTrue(memory.is_vector_continuation(0xffc1))
+        tracer.enqueue_vector(0xa000)
+        self.assertEqual(len(tracer.queue), 0)
 
     # branch always taken
 
