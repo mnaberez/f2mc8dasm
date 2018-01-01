@@ -81,9 +81,15 @@ class Printer(object):
             print("\n%s:" % self.format_ext_address(address))
 
     def print_data_line(self, address):
-        line = ('    .byte 0x%02X' % self.memory[address]).ljust(28)
-        line += ';%04x  %02x          DATA %r ' % (address, self.memory[address], chr(self.memory[address]))
+        line = ('    .byte 0x%02x' % self.memory[address]).ljust(28)
+        line += ';%04x  %02x          DATA %s ' % (address, self.memory[address], self._data_byte_repr(self.memory[address]))
         print(line)
+
+    def _data_byte_repr(self, b):
+        if (b >= 0x20) and (b <= 0x7e):  # printable 7-bit ascii
+            return "0x%02x '%s'" % (b, chr(b))
+        else:
+            return "0x%02x" % b
 
     def print_vector_line(self, address):
         target = struct.unpack('>H', self.memory[address:address+2])[0]
