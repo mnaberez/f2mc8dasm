@@ -126,9 +126,7 @@ class Printer(object):
 
         # render instruction as a .byte sequence if asf2mc8 would optimize an
         # extended address into a direct one, breaking identical reassembly
-        ext_page_0 = ((inst.addr_mode == AddressModes.Extended) and
-                      ((inst.address & 0xFF00) == 0) and
-                      (inst.opcode not in (0x21, 0x31)))
+        ext_page_0 = inst.extended_address_page_0
 
         # render instruction as .byte sequence if it is a relative branch
         # to an address that does not have a symbol

@@ -76,6 +76,14 @@ class Instruction(object):
                 return True
         return False
 
+    @property
+    def extended_address_page_0(self):
+        '''Indicates the instruction uses extended addressing for page 0
+        that could be optimized to direct addressing'''
+        return ((self.addr_mode == AddressModes.Extended) and
+                ((self.address & 0xFF00) == 0) and
+                (self.opcode not in (0x21, 0x31)))
+
 
 def disassemble_inst(memory, pc):
     opcode = Opcodes[memory[pc]]
