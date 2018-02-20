@@ -10,7 +10,7 @@ microcontrollers in the F2MC-8L (MB89xxx) and F2MC-8FX (MB95xxx) families.  The
 are not supported.
 
 f2mc8dasm was developed to disassemble the firmware of the Volkswagen Premium IV car radios made by Clarion.  These radios use the Fujitsu MB89623R, MB89625R, and MB89677AR microcontrollers.  All of these are the F2MC-8L
-architecture with code in mask ROM.
+architecture with code in mask ROM.  The code was extracted with [f2mc8dump](https://github.com/mnaberez/f2mc8dump).
 
 ## Features
 
