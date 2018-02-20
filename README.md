@@ -3,7 +3,7 @@
 ## Overview
 
 f2mc8dasm is a disassembler for Fujitsu F2MC-8 binaries that generates output
-compatible with the [asf2mc8](https://shop-pdp.net/ashtml/asf2mc.htm)
+compatible with the [asf2mc8](http://shop-pdp.net/ashtml/asf2mc.htm)
 assembler.  It can be used to disassemble firmware for many 8-bit Fujitsu
 microcontrollers in the F2MC-8L (MB89xxx) and F2MC-8FX (MB95xxx) families.  The
 16- and 32-bit F2MC microcontrollers use different instruction sets and
