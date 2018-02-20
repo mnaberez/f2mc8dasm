@@ -9,10 +9,8 @@ microcontrollers in the F2MC-8L (MB89xxx) and F2MC-8FX (MB95xxx) families.  The
 16- and 32-bit F2MC microcontrollers use different instruction sets and
 are not supported.
 
-f2mc8dasm was developed for, and successfully used to, disassemble the
-firmware of the Volkswagen Premium IV car radios made by Clarion.  These
-radios use the Fujitsu MB89625R and MB89677AR microcontrollers, both of which
-are the F2MC-8L architecture and have code in mask ROM.
+f2mc8dasm was developed to disassemble the firmware of the Volkswagen Premium IV car radios made by Clarion.  These radios use the Fujitsu MB89623R, MB89625R, and MB89677AR microcontrollers.  All of these are the F2MC-8L
+architecture with code in mask ROM.
 
 ## Features
 
@@ -33,13 +31,11 @@ are the F2MC-8L architecture and have code in mask ROM.
 
 ## Installation
 
-f2mc8dasm is written in Python and requires Python 3.4 or later.  Packages
-are [published](https://pypi.python.org/pypi/f2mc8dasm) on the Python
-Package Index (PyPI).  You can download the package from there or use `pip`
-to automatically install or upgrade f2mc8dasm:
+f2mc8dasm is written in Python and requires Python 3.4 or later.  You can
+download the package from this git repository and then install it with:
 
 ```
-$ pip install -U f2mc8dasm
+$ python setup.py install
 ```
 
 ## Usage
@@ -51,20 +47,8 @@ ROM image that should be aligned to the top of memory.  For example, if a
 at 0xFFC0-FFFF and starts tracing instructions from there.
 
 ```
-$ f2mc8dasm -d mb89670 -o output.asm input.bin
+$ f2mc8dasm input.bin > output.asm
 ```
-
-Options:
-
- - `-d` (`--device`) accepts a Fujitsu part number and adds symbols specific
-   to the device.  This is especially useful for peripheral registers.  If no
-   device is specified, only symbols common to all F2MC-8 devices are used.
-
- - `-o` (`--outfile`) specifies a file where the asf2mc8-compatible assembly
-   output will be written.  If not specified, the assembly will be printed
-   to `stdout`.
-
- - `-h` (`--help`) shows help and describes other options not mentioned here.
 
 ## Author
 
