@@ -26,7 +26,7 @@ def main():
             print("\nWrote %d random bytes to original.bin" % size)
 
             run('rm -f disasm.*')
-            run('time f2mc8dasm original.bin > disasm.asm')
+            run('f2mc8dasm original.bin > disasm.asm')
             run('asf2mc8 -l disasm.asm')
             run('python lst2bin.py disasm.lst disasm.bin')
 

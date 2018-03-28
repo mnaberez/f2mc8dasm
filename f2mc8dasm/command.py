@@ -15,7 +15,7 @@ def main():
     memory.set_reserved_byte(0xfffc)
     memory.set_mode_byte(0xfffd)
 
-    entry_points = []
+    entry_points = [0xedba]
     vectors = [
         # callv
         0xffc0, 0xffc2, 0xffc4, 0xffc6, 0xffc8, 0xffca, 0xffcc, 0xffce,
