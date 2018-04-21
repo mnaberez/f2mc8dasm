@@ -286,8 +286,6 @@ class Tracer(object):
         self.enqueue_processor_state(new_ps)
         self.memory.annotate_jump_target(inst.address)
 
-        return False
-
     def _trace_generic_unconditional_jump(self, inst, ps, new_ps):
         self._update_flags(inst, new_ps)
         self.memory.annotate_jump_target(inst.address)
