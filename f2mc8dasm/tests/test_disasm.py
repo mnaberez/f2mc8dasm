@@ -345,7 +345,7 @@ class disassemble_instTests(unittest.TestCase):
         self.assertEqual(inst.callv, None)
         self.assertEqual(inst.register, None)
 
-    def test_relative_foward(self):
+    def test_relative_forward(self):
         memory = bytearray(0x10000)
         memory[0x8172] = 0xfc
         memory[0x8173] = 0x05
