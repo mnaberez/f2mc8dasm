@@ -41,6 +41,16 @@ class SymbolTableTests(unittest.TestCase):
         st.generate(mem, 0)
         self.assertEqual(st.symbols, {})
 
+    def test_generate_doesnt_overwrite_code_existing_symbol(self):
+        mem = memory.Memory(bytearray(0x10000))
+        mem.annotate_jump_target(0xF000)
+        mem.annotate_call_target(0xF000)
+        mem.set_instruction(0xF000, disasm.Instruction())
+        existing_symbols = {0xf000: ('print', '')}
+        st = symbols.SymbolTable(existing_symbols)
+        st.generate(mem, 0)
+        self.assertEqual(st.symbols, existing_symbols)
+
 
 class SymbolDictionariesTests(unittest.TestCase):
     def test_addresses_are_in_range(self):

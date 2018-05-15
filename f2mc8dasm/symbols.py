@@ -12,7 +12,9 @@ class SymbolTable(object):
 
     def generate_code_symbols(self, memory, start_address):
         for address in range(start_address, len(memory)):
-            if memory.is_call_target(address):
+            if address in self.symbols:
+                pass # do not overwrite existing symbols
+            elif memory.is_call_target(address):
                 if memory.is_instruction_start(address):
                     self.symbols[address] = ('sub_%04x' % address, '')
             elif memory.is_jump_target(address):
