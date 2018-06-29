@@ -29,7 +29,7 @@ setup(
     name='f2mc8dasm',
     version=__version__,
     license='License :: OSI Approved :: BSD License',
-    url='',
+    url='https://github.com/mnaberez/f2mc8dasm',
     description=DESC,
     long_description=DESC,
     classifiers=CLASSIFIERS,
