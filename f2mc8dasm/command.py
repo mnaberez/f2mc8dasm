@@ -1,3 +1,8 @@
+'''
+Usage: f2mc8dasm <filename.bin>
+
+'''
+
 import sys
 
 from f2mc8dasm.disasm import disassemble_inst
@@ -7,6 +12,10 @@ from f2mc8dasm.listing import Printer
 from f2mc8dasm.symbols import MB89620R_SYMBOLS, SymbolTable
 
 def main():
+    if len(sys.argv) != 2:
+        sys.stderr.write(__doc__)
+        sys.exit(1)
+
     with open(sys.argv[1], 'rb') as f:
         rom = bytearray(f.read())
     start_address = 0x10000 - len(rom)
