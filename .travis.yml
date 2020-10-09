@@ -15,6 +15,7 @@ matrix:
       env: TOXENV=py38
       dist: xenial          # required for Python >= 3.7
 install:
-  - travis_retry pip install tox
+  # tox is pinned for python 3.4 support
+  - travis_retry pip install tox==3.14.0
 script:
   - travis_retry tox
