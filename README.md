@@ -31,7 +31,7 @@ architecture with code in mask ROM.  The code was extracted with [f2mc8dump](htt
 
 ## Installation
 
-f2mc8dasm is written in Python and requires Python 3.4 or later.  You can
+f2mc8dasm is written in Python and requires Python 3.6 or later.  You can
 download the package from this git repository and then install it with:
 
 ```
