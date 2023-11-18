@@ -3,7 +3,37 @@ name: Run all tests
 on: [push]
 
 jobs:
-  build:
+  build_py34:
+    runs-on: ubuntu-20.04
+    container: python:3.4
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Show Python version
+      run: python -V
+
+    - name: Run the tests
+      run: python setup.py test -q
+
+  build_py35:
+    runs-on: ubuntu-20.04
+    container: python:3.5
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Show Python version
+      run: python -V
+
+    - name: Run the tests
+      run: python setup.py test -q
+
+  build_py3x:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
