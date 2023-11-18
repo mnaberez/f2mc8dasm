@@ -2,6 +2,11 @@ name: Run all tests
 
 on: [push]
 
+env:
+  PIP: "env PIP_DISABLE_PIP_VERSION_CHECK=1 
+            PYTHONWARNINGS=ignore:DEPRECATION
+            pip --no-cache-dir"
+
 jobs:
   build_py34:
     runs-on: ubuntu-20.04
@@ -14,6 +19,9 @@ jobs:
 
     - name: Show Python version
       run: python -V
+
+    - name: Install dependencies
+      run: $PIP install setuptools
 
     - name: Run the tests
       run: python setup.py test -q
@@ -30,6 +38,9 @@ jobs:
     - name: Show Python version
       run: python -V
 
+    - name: Install dependencies
+      run: $PIP install setuptools
+
     - name: Run the tests
       run: python setup.py test -q
 
@@ -38,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9, "3.10", 3.11, 3.12]
 
     steps:
     - uses: actions/checkout@v3
@@ -50,6 +61,9 @@ jobs:
 
     - name: Show Python version
       run: python -V
+
+    - name: Install dependencies
+      run: $PIP install setuptools
 
     - name: Run the tests
       run: python setup.py test -q
