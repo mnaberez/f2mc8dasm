@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages]
+find = {}
+
+[project]
+name = "f2mc8dasm"
+version = "1.0.0.dev0"
+description = "Fujitsu F2MC-8 disassembler"
+authors = [
+    { name = "Mike Naberezny", email = "mike@naberezny.com" }
+]
+maintainers = [
+    { name = "Mike Naberezny", email = "mike@naberezny.com" }
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "BSD License" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Operating System :: POSIX",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Assembly",
+    "Topic :: Software Development :: Disassemblers",
+    "Topic :: Software Development :: Embedded Systems",
+    "Topic :: System :: Hardware",
+]
+
+[project.urls]
+Homepage = "https://github.com/mnaberez/f2mc8dasm"
+
+[project.scripts]
+f2mc8dasm = "f2mc8dasm.command:main"
