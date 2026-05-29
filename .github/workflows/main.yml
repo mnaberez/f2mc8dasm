@@ -1,69 +1,33 @@
 name: Run all tests
 
-on: [push]
+on: [push, pull_request]
 
 env:
-  PIP: "env PIP_DISABLE_PIP_VERSION_CHECK=1 
+  PIP: "env PIP_DISABLE_PIP_VERSION_CHECK=1
             PYTHONWARNINGS=ignore:DEPRECATION
             pip --no-cache-dir"
 
 jobs:
-  build_py34:
-    runs-on: ubuntu-20.04
-    container: python:3.4
-    strategy:
-      fail-fast: false
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Show Python version
-      run: python -V
-
-    - name: Install dependencies
-      run: $PIP install setuptools
-
-    - name: Run the tests
-      run: python setup.py test -q
-
-  build_py35:
-    runs-on: ubuntu-20.04
-    container: python:3.5
-    strategy:
-      fail-fast: false
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Show Python version
-      run: python -V
-
-    - name: Install dependencies
-      run: $PIP install setuptools
-
-    - name: Run the tests
-      run: python setup.py test -q
-
-  build_py3x:
-    runs-on: ubuntu-20.04
+  test:
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, "3.10", 3.11, 3.12]
+        python-version: [3.8, 3.9, "3.10", 3.11, 3.12, 3.13, 3.14, "pypy-3.11"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Show Python version
       run: python -V
 
-    - name: Install dependencies
-      run: $PIP install setuptools
+    - name: Install the package
+      run: $PIP install .
 
     - name: Run the tests
-      run: python setup.py test -q
+      run: python -m unittest discover f2mc8dasm.tests
